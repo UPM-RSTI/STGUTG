@@ -1,0 +1,11 @@
+configuration:
+
+  #Database info
+  name: "free5gc"
+  ipaddr: "127.0.0.1"
+  port: "27017"
+
+  #UE info
+  initial_imsi: 2089300000001
+  splmnId: "20893"
+  number: 10
