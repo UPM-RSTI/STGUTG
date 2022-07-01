@@ -1,12 +1,12 @@
-# 5gvinni-stgutg
+# STGUTG
 
 
 ## Installation with Docker
 
-1. Download all github 5gvinni-stgutg repository.
-2. Extract dockerfile and docker-compose files from folder 5gvinni-stgutg. This is because Dockerfile needs copy 5gvinni-stgutg folder to docker container.
+1. Download all github stgutg repository.
+2. Extract dockerfile and docker-compose files from folder stgutg. This is because Dockerfile needs copy stgutg folder to docker container.
 
-Default path tree (e.g /home/5gvinni-stgutg)
+Default path tree (e.g /home/stgutg)
   - src
   - utils
   - Dockerfile
@@ -17,7 +17,7 @@ Default path tree (e.g /home/5gvinni-stgutg)
   - stg-utg
 
 Path tree for docker (e.g /home)
-  - 5gvinni-stgutg
+  - stgutg
   - Dockerfile
   - docker-compose.yml
 
@@ -33,12 +33,12 @@ Path tree for docker (e.g /home)
 
 ### 2. Clone project
 
-`git clone git@github.com:UPM-RSTI/5gvinni-stgutg.git`
+`git clone git@github.com:UPM-RSTI/STGUTG.git`
 
 
 ### 3. Configure Environment variables
 
-`export GOPATH=/home/user/go:/home/user/5gvinni-stgutg` (Or the pathds where the go folder and the cloned project are stored)
+`export GOPATH=/home/user/go:/home/user/stgutg` (Or the paths where the go folder and the cloned project are stored)
 
 `export GOROOT=/usr/local/go`
 
