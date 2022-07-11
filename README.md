@@ -38,7 +38,7 @@ Path tree for docker (e.g /home)
 
 ### 3. Configure Environment variables
 
-`export GOPATH=/home/user/go:/home/user/stgutg` (Or the paths where the go folder and the cloned project are stored)
+`export GOPATH=/home/user/go:/home/user/STGUTG` (Or the paths where the go folder and the cloned project are stored)
 
 `export GOROOT=/usr/local/go`
 
@@ -72,6 +72,20 @@ This configuration can be added to ~/.bashrc.
 
 `go get gopkg.in/yaml.v2`
 
+### 4.b Select dependencies
+`cd ~/go/src/github.com/gin-gonic/gin`
+`git checkout v1.7.0`
+`go get github.com/free5gc/nas/nasMessage`
+`go get github.com/free5gc/openapi/models`
+`go get github.com/golang/protobuf/proto`
+`cd ~/go/src/github.com/free5gc/nas`
+`git checkout v1.0.1`
+`cd ~/go/src/github.com/free5gc/openapi`
+`git checkout v1.0.2`
+`go get github.com/free5gc/logger_conf`
+`go get github.com/free5gc/logger_util`
+`go get github.com/free5gc/ngap`
+`go get github.com/free5gc/util_3gpp`
 
 ### 5. Build executable
 

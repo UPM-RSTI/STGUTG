@@ -5,22 +5,22 @@ info:
 configuration:
 
 # Network Functions
-  amf_ngap: 10.100.200.3
-  amf_port: 38412
+  amf_ngap: 192.168.42.3
+  amf_port: 48412
 
-  upf_gtp: 10.200.200.102
+  upf_gtp: 192.168.43.3
   upf_port: 2152
 
-  gnb_gtp: 10.200.200.1
+  gnb_gtp: 192.168.43.2
   gnbg_port: 9487
 
-  gnb_ngap: 10.100.200.4
+  gnb_ngap: 192.168.42.2
   gnbn_port: 2152
 
   ue_ori: 60.60.0.1
 
 # UE
-  initial_imsi: 2089300000001
+  initial_imsi: 208930000000003
   mcc: "208"
   mnc: "93"
 
@@ -30,8 +30,8 @@ configuration:
   gnb_name: "free5gc"
 
 # UE Authentication Data
-  k: "5122250214c33e723a5dd523fc145fc0"
-  opc: "981d464c7c52eb6e5036234984ad0bcf"
+  k: "8baf473f2f8fd09487cccbd7097c6862"
+  opc: "8e27b6af0e692e750f32667a3b14605d"
   op: "c9e8763286b5b9ffbdf56e1297d0887b"
 
   sst: 1

@@ -7,11 +7,11 @@ package stgutg
 // Date: 9/6/21
 
 import (
-  "free5gc/lib/openapi/models"
-  "free5gc/lib/nas/nasTestpacket"
-  "free5gc/lib/nas/nasMessage"
-  "free5gc/lib/nas"
-  "free5gc/lib/ngap"
+  "github.com/free5gc/openapi/models"
+  "github.com/free5gc/nas/nasTestpacket"
+  "github.com/free5gc/nas/nasMessage"
+  "github.com/free5gc/nas"
+  "github.com/free5gc/ngap"
 
   "tglib"
   "fmt"
