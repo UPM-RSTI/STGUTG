@@ -71,7 +71,8 @@ func main() {
                                        pdu,
                                        ueList[i],
                                        conn,
-                                       c.Configuration.Gnb_gtp)
+                                       c.Configuration.Gnb_gtp,
+                                       c.Configuration.Free5gc_version)
 
          ipteids = append(ipteids, ipteid)
          i++
@@ -210,7 +211,8 @@ func main() {
                                       pduList[i],
                                       ueList[i],
                                       conn,
-                                      c.Configuration.Gnb_gtp)
+                                      c.Configuration.Gnb_gtp,
+                                      c.Configuration.Free5gc_version)
 
         ipteids = append(ipteids, ipteid)
         time.Sleep(1 * time.Second)

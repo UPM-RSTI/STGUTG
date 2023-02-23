@@ -47,18 +47,27 @@ func ListenForResponses (src *pcap.Handle, dst *pcap.Handle, srcMac string, gnb_
 
   			p,err := layers.UnpackAll(buf,packet.Eth)
         ManageError("Error capturing receiving traffic",err)
-  			ip_p := p.Payload()
-  			udp_p := ip_p.Payload()
-  			tgp_p := udp_p.Payload()
-  			enc_b,err := layers.Pack(tgp_p)
-        ManageError("Error capturing receiving traffic",err)
 
-        // TODO: This will fail if no ARP table entry has been previously added
-        // for the IP in enc_b.
-        eth_hdr,err := hex.DecodeString(GetMAC(GetIP(enc_b),table)+srcMac+"0800")
-        ManageError("Error capturing receiving traffic",err)
+	ip_p := p.Payload()
+	udp_p := ip_p.Payload()
+	tgp_p := udp_p.Payload()
+	enc_b,err := layers.Pack(tgp_p)
+	gtp_hdr_size := 8                                                
+	if enc_b[0]&4 != 0 {                          
+		gtp_hdr_size += 4 + int(enc_b[12])*4           
+	} else if enc_b[0]&3 != 0 {                                         
+		gtp_hdr_size += 4                                             
+	}                                                                    
+	enc_b = enc_b[gtp_hdr_size:]			
+	ManageError("Error capturing receiving traffic",err)
 
-  			src.Inject(append(eth_hdr,enc_b[8:]...))
+	// TODO: This will fail if no ARP table entry has been previously added
+	// for the IP in enc_b.
+	eth_hdr,err := hex.DecodeString(GetMAC(GetIP(enc_b),table)+srcMac+"0800")
+	ManageError("Error capturing receiving traffic",err)
+
+	src.Inject(append(eth_hdr,enc_b...))
+
   		}
 	}
 }

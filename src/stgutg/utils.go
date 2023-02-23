@@ -20,6 +20,7 @@ import (
 
 type Conf struct {
     Configuration struct {
+      Free5gc_version string `yaml:"free5gc_version"`
       Amf_ngap string `yaml:"amf_ngap"`
       Amf_port int `yaml:"amf_port"`
       Gnb_gtp string `yaml:"gnb_gtp"`
@@ -185,8 +186,8 @@ func GetMAC(ip string, table [][]string) string {
 // get the IP address of the encapsulated packet received from the GTP tunnel.
 func GetIP(ip_buffer []byte) string {
 
-  ip := fmt.Sprintf("%d",ip_buffer[24])
-  for i:=25; i<28; i++ {
+  ip := fmt.Sprintf("%d",ip_buffer[16])
+  for i:=17; i<20; i++ {
     ip = ip+"."+fmt.Sprintf("%d",ip_buffer[i])
   }
   return ip

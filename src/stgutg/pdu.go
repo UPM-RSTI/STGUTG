@@ -29,7 +29,7 @@ import (
 // Function that establishes a new PDU session for a given UE.
 // It requres a previously generated UE and an active SCTP connection with an AMF.
 // It returns a tuple of assigned IP for the UE and the corresponding TEID.
-func EstablishPDU(sst int32, sd string, pdu []byte, ue *tglib.RanUeContext, conn *sctp.SCTPConn, gnb_gtp string) Ipteid {
+func EstablishPDU(sst int32, sd string, pdu []byte, ue *tglib.RanUeContext, conn *sctp.SCTPConn, gnb_gtp string, free5gc_version string) Ipteid {
 
   var recvMsg = make([]byte, 2048)
   sNssai := models.Snssai{
@@ -49,7 +49,7 @@ func EstablishPDU(sst int32, sd string, pdu []byte, ue *tglib.RanUeContext, conn
                                                                        &sNssai)
 
 	pdu, err := tglib.EncodeNasPduWithSecurity(ue,
-                                             pdu,
+                                             pdu, 
                                              nas.SecurityHeaderTypeIntegrityProtectedAndCiphered,
                                              true,
                                              false)
@@ -69,11 +69,27 @@ func EstablishPDU(sst int32, sd string, pdu []byte, ue *tglib.RanUeContext, conn
 	msg, err := ngap.Decoder(recvMsg[:n])
   ManageError("Error establishing PDU",err)
 
-
   // Recover assigned IP and TEID for the session.
   // TODO: This is an ad-hoc solution for free5gc. Check if it works for other cores.
-  bteid := msg.InitiatingMessage.Value.PDUSessionResourceSetupRequest.ProtocolIEs.List[2].Value.PDUSessionResourceSetupListSUReq.List[0].PDUSessionResourceSetupRequestTransfer[13:17]
-  bip := msg.InitiatingMessage.Value.PDUSessionResourceSetupRequest.ProtocolIEs.List[2].Value.PDUSessionResourceSetupListSUReq.List[0].PDUSessionNASPDU.Value[41:45]
+
+  var bteid []byte = nil
+  var bip []byte = nil
+
+  switch free5gc_version {
+  case "v3.0.5":
+
+    bteid = msg.InitiatingMessage.Value.PDUSessionResourceSetupRequest.ProtocolIEs.List[2].Value.PDUSessionResourceSetupListSUReq.List[0].PDUSessionResourceSetupRequestTransfer[13:17]
+    bip = msg.InitiatingMessage.Value.PDUSessionResourceSetupRequest.ProtocolIEs.List[2].Value.PDUSessionResourceSetupListSUReq.List[0].PDUSessionNASPDU.Value[41:45]
+
+  case "v3.2.1":
+
+    bteid = msg.InitiatingMessage.Value.PDUSessionResourceSetupRequest.ProtocolIEs.List[2].Value.PDUSessionResourceSetupListSUReq.List[0].PDUSessionResourceSetupRequestTransfer[27:31]
+    bip = msg.InitiatingMessage.Value.PDUSessionResourceSetupRequest.ProtocolIEs.List[2].Value.PDUSessionResourceSetupListSUReq.List[0].PDUSessionNASPDU.Value[39:43]
+
+  default:
+    ManageError("Error establishing PDU", fmt.Errorf("%s is not a supported Free5gc version", free5gc_version))
+  }
+
   teid := binary.BigEndian.Uint32(bteid)
   ip := net.IP(bip)
   it.ueip = ip
