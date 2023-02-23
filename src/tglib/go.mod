@@ -27,9 +27,6 @@ require (
         github.com/sirupsen/logrus v1.9.0
         github.com/stretchr/testify v1.8.1
         go.mongodb.org/mongo-driver v1.11.2
-        golang.org/x/crypto v0.6.0
-        golang.org/x/net v0.7.0
-        golang.org/x/oauth2 v0.5.0
         gopkg.in/yaml.v2 v2.4.0
         stgutg v0.0.0-00010101000000-000000000000
 )
