@@ -3,8 +3,8 @@ module tglib
 go 1.14
 
 replace (
-        free5gc/lib => /home/rotchamar/go/src/free5gc/lib
-        stgutg => /home/rotchamar/go/src/stgutg
+        free5gc/lib => ./src/free5gc/lib
+        stgutg => ./src/stgutg
 )
 
 require (
