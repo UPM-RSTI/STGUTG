@@ -9,137 +9,29 @@ Developed by [UPM RSTI Research group](https://blogs.upm.es/rsti).
 
 ## Installation 
 
-### 1. Download and install GO 1.12.9
+### 1. Install dependencies
 
 ```
-wget https://dl.google.com/go/go1.12.9.linux-amd64.tar.gz
-```
-```
-sudo tar -C /usr/local -zxvf go1.12.9.linux-amd64.tar.gz
-```
-```
-mkdir -p ~/go/{bin,pkg,src}
+sudo apt-get install libpcap-dev
 ```
 
-### 2. Clone project
+### 2. Build executable
 
 ```
-git clone git@github.com:UPM-RSTI/STGUTG.git
+go build
 ```
 
-### 3. Configure Environment variables
-
-```
-export GOPATH=/home/user/go:/home/user/STGUTG 
-```
-(Or the paths where the go folder and the cloned project are stored)
-```
-export GOROOT=/usr/local/go
-```
-```
-export PATH=$PATH:$GOPATH/bin:$GOROOT/bin
-```
-```
-export GO111MODULE=off
-```
-
-This configuration can be added to ~/.bashrc.
-
-### 4. Install dependencies
-
-```
-go get github.com/aead/cmac
-```
-```
-go get github.com/antonfisher/nested-logrus-formatter
-```
-```
-go get github.com/calee0219/fatal
-```
-```
-go get github.com/dgrijalva/jwt-go
-```
-```
-apt-get install build-essential
-```
-```
-apt-get install libpcap-dev
-```
-```
-go get github.com/ghedo/go.pkt/capture/pcap
-```
-```
-go get github.com/gin-gonic/gin
-```
-```
-go get github.com/ishidawataru/sctp
-```
-```
-go get golang.org/x/net/ipv4
-```
-```
-go get gopkg.in/yaml.v2
-```
-
-### 5. Select dependencies versions
-
-```
-cd ~/go/src/github.com/gin-gonic/gin
-```
-```
-git checkout v1.7.0
-```
-```
-go get github.com/free5gc/nas/nasMessage
-```
-```
-go get github.com/free5gc/openapi/models
-```
-```
-go get github.com/golang/protobuf/proto
-```
-```
-cd ~/go/src/github.com/free5gc/nas
-```
-```
-git checkout v1.0.1
-```
-```
-cd ~/go/src/github.com/free5gc/openapi
-```
-```
-git checkout v1.0.2
-```
-```
-go get github.com/free5gc/logger_conf
-```
-```
-go get github.com/free5gc/logger_util
-```
-```
-go get github.com/free5gc/ngap
-```
-```
-go get github.com/free5gc/util_3gpp
-```
-
-### 6. Build executable
-
-```
-go build src/stg-utg.go
-```
-
-### 7. Configure and run
+### 3. Configure and run
 
 ```
 nano src/config.yaml
 ```
 ```
-stg-utg 
+stgutgmain 
 ```
 or
 ```
-stg-utg -t 
+stgutgmain -t 
 ```
 for testing mode
 
@@ -312,7 +204,7 @@ Add a new subscriber without modifying any parameter.
 
 3.  run the STGUTG software:
 ```
-sudo ./stg-utg
+sudo ./stgutgmain
 ```
 
 4. Use the UE VM to send traffic through the core to any Internet-based service (ping to 8.8.8.8 should suffice to test if the configuration is successful).
