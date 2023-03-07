@@ -15,7 +15,7 @@ func TestNasTypeNewAllowedSSCMode(t *testing.T) {
 	assert.NotNil(t, a)
 }
 
-//var nasTypePDUSessionEstablishmentRejectAllowedSSCModeOut = (nasMessage.PDUSessionEstablishmentRejectAllowedSSCModeType & 15) << 4
+// var nasTypePDUSessionEstablishmentRejectAllowedSSCModeOut = (nasMessage.PDUSessionEstablishmentRejectAllowedSSCModeType & 15) << 4
 var nasTypePDUSessionEstablishmentRejectAllowedSSCModeTable = []NasTypeIeiData{
 	{pDUSessionEstablishmentRejectAllowedSSCModeIeiInput, pDUSessionEstablishmentRejectAllowedSSCModeIeiInput},
 }

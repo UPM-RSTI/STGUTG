@@ -1,8 +1,8 @@
 package http_wrapper_test
 
 import (
-	"github.com/stretchr/testify/assert"
 	"free5gc/lib/http_wrapper"
+	"github.com/stretchr/testify/assert"
 	"net/http"
 	"testing"
 )

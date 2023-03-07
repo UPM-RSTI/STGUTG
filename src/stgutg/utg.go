@@ -10,16 +10,16 @@ package stgutg
 // Date: 9/6/21
 
 import (
-  "tglib"
+	"tglib"
 
-  "encoding/hex"
-  "net"
-  //"fmt"
+	"encoding/hex"
+	"net"
+	//"fmt"
 
-  "github.com/ghedo/go.pkt/capture/pcap"
-  "github.com/ghedo/go.pkt/layers"
-  "github.com/ghedo/go.pkt/filter"
-  "github.com/ghedo/go.pkt/packet"
+	"github.com/ghedo/go.pkt/capture/pcap"
+	"github.com/ghedo/go.pkt/filter"
+	"github.com/ghedo/go.pkt/layers"
+	"github.com/ghedo/go.pkt/packet"
 )
 
 // ListenForResponses
@@ -28,47 +28,47 @@ import (
 // tunnel, then checks the destination IP and looks up the corresponding MAC address
 // in the system ARP table. It then builds the Eth header and sends the packet back to
 // the client.
-func ListenForResponses (src *pcap.Handle, dst *pcap.Handle, srcMac string, gnb_gtp string){
+func ListenForResponses(src *pcap.Handle, dst *pcap.Handle, srcMac string, gnb_gtp string) {
 
-	f,err := filter.Compile("not arp and dst "+gnb_gtp,packet.Eth,true)
-  ManageError("Error capturing receiving traffic",err)
+	f, err := filter.Compile("not arp and dst "+gnb_gtp, packet.Eth, true)
+	ManageError("Error capturing receiving traffic", err)
 
-   // TODO: this should be a configuration parameter?
-  table := GetARPTable("/proc/net/arp")
+	// TODO: this should be a configuration parameter?
+	table := GetARPTable("/proc/net/arp")
 
 	dst.Activate()
 	for {
 
-  		buf,err := dst.Capture()
+		buf, err := dst.Capture()
 
-      ManageError("Error capturing receiving traffic",err)
+		ManageError("Error capturing receiving traffic", err)
 
-  		if f.Match(buf) {
+		if f.Match(buf) {
 
-  			p,err := layers.UnpackAll(buf,packet.Eth)
-        ManageError("Error capturing receiving traffic",err)
+			p, err := layers.UnpackAll(buf, packet.Eth)
+			ManageError("Error capturing receiving traffic", err)
 
-	ip_p := p.Payload()
-	udp_p := ip_p.Payload()
-	tgp_p := udp_p.Payload()
-	enc_b,err := layers.Pack(tgp_p)
-	gtp_hdr_size := 8                                                
-	if enc_b[0]&4 != 0 {                          
-		gtp_hdr_size += 4 + int(enc_b[12])*4           
-	} else if enc_b[0]&3 != 0 {                                         
-		gtp_hdr_size += 4                                             
-	}                                                                    
-	enc_b = enc_b[gtp_hdr_size:]			
-	ManageError("Error capturing receiving traffic",err)
+			ip_p := p.Payload()
+			udp_p := ip_p.Payload()
+			tgp_p := udp_p.Payload()
+			enc_b, err := layers.Pack(tgp_p)
+			gtp_hdr_size := 8
+			if enc_b[0]&4 != 0 {
+				gtp_hdr_size += 4 + int(enc_b[12])*4
+			} else if enc_b[0]&3 != 0 {
+				gtp_hdr_size += 4
+			}
+			enc_b = enc_b[gtp_hdr_size:]
+			ManageError("Error capturing receiving traffic", err)
 
-	// TODO: This will fail if no ARP table entry has been previously added
-	// for the IP in enc_b.
-	eth_hdr,err := hex.DecodeString(GetMAC(GetIP(enc_b),table)+srcMac+"0800")
-	ManageError("Error capturing receiving traffic",err)
+			// TODO: This will fail if no ARP table entry has been previously added
+			// for the IP in enc_b.
+			eth_hdr, err := hex.DecodeString(GetMAC(GetIP(enc_b), table) + srcMac + "0800")
+			ManageError("Error capturing receiving traffic", err)
 
-	src.Inject(append(eth_hdr,enc_b...))
+			src.Inject(append(eth_hdr, enc_b...))
 
-  		}
+		}
 	}
 }
 
@@ -77,34 +77,33 @@ func ListenForResponses (src *pcap.Handle, dst *pcap.Handle, srcMac string, gnb_
 // generate the user traffic (src), emulating the UEs.
 // It checks the source IP address to determine the TEID to use when adding the GTP
 // header and then sends the traffic to the UPF.
-func SendTraffic (upfConn *net.UDPConn,src *pcap.Handle, teids []Ipteid) {
+func SendTraffic(upfConn *net.UDPConn, src *pcap.Handle, teids []Ipteid) {
 
-  f,_ := filter.Compile("not arp",packet.Eth,true)
+	f, _ := filter.Compile("not arp", packet.Eth, true)
 
-  i:=0
-  for {
-		buf,err := src.Capture()
-    ManageError("Error capturing and sending traffic",err)
+	i := 0
+	for {
+		buf, err := src.Capture()
+		ManageError("Error capturing and sending traffic", err)
 
 		if f.Match(buf) {
 
+			p, err := layers.UnpackAll(buf, packet.Eth)
+			ManageError("Error capturing and sending traffic", err)
+			ip_p := p.Payload()
+			enc_ipp, err := layers.Pack(ip_p)
+			ManageError("Error capturing and sending traffic", err)
+			src_ip := net.IP(enc_ipp[12:16])
+			//fmt.Println(src_ip)
+			teid := GetTEID(src_ip, teids)
 
-      p,err := layers.UnpackAll(buf,packet.Eth)
-      ManageError("Error capturing and sending traffic",err)
-      ip_p := p.Payload()
-      enc_ipp, err := layers.Pack(ip_p)
-      ManageError("Error capturing and sending traffic",err)
-      src_ip := net.IP(enc_ipp[12:16])
-      //fmt.Println(src_ip)
-      teid := GetTEID(src_ip, teids)
+			gtpHdr, err := tglib.BuildGTPv1Header(false, 0, false, 0, false, 0, uint16(len(buf[14:])), teid)
+			ManageError("Error capturing and sending traffic", err)
 
-			gtpHdr,err := tglib.BuildGTPv1Header(false, 0, false, 0, false, 0, uint16(len(buf[14:])), teid)
-      ManageError("Error capturing and sending traffic",err)
+			_, err = upfConn.Write(append(gtpHdr, buf[14:]...))
+			ManageError("Error capturing and sending traffic", err)
 
-      _, err = upfConn.Write(append(gtpHdr,buf[14:]...))
-      ManageError("Error capturing and sending traffic",err)
-
-      i++
+			i++
 		}
 	}
 }

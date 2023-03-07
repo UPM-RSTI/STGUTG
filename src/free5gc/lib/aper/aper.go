@@ -868,17 +868,17 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 //
 // The following tags on struct fields have special meaning to Unmarshal:
 //
-//	optional        	OPTIONAL tag in SEQUENCE
-//	sizeExt             specifies that size  is extensible
-//	valueExt            specifies that value is extensible
-//	sizeLB		        set the minimum value of size constraint
-//	sizeUB              set the maximum value of value constraint
-//	valueLB		        set the minimum value of size constraint
-//	valueUB             set the maximum value of value constraint
-//	default             sets the default value
-//	openType            specifies the open Type
-//  referenceFieldName	the string of the reference field for this type (only if openType used)
-//  referenceFieldValue	the corresponding value of the reference field for this type (only if openType used)
+//		optional        	OPTIONAL tag in SEQUENCE
+//		sizeExt             specifies that size  is extensible
+//		valueExt            specifies that value is extensible
+//		sizeLB		        set the minimum value of size constraint
+//		sizeUB              set the maximum value of value constraint
+//		valueLB		        set the minimum value of size constraint
+//		valueUB             set the maximum value of value constraint
+//		default             sets the default value
+//		openType            specifies the open Type
+//	 referenceFieldName	the string of the reference field for this type (only if openType used)
+//	 referenceFieldValue	the corresponding value of the reference field for this type (only if openType used)
 //
 // Other ASN.1 types are not supported; if it encounters them,
 // Unmarshal returns a parse error.

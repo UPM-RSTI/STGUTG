@@ -385,11 +385,11 @@ type testPDUSessionStatusDataTemplate struct {
 }
 
 /*
-	For the 1st testcase with len 2, our input for SetSpare function will not be read
-	as the len size is too small(< 3). However, SetSpare function won't raise any error
-	since the "make" function in golang will create a zero-length slice instead of nil slice.
+For the 1st testcase with len 2, our input for SetSpare function will not be read
+as the len size is too small(< 3). However, SetSpare function won't raise any error
+since the "make" function in golang will create a zero-length slice instead of nil slice.
 
-	REFERENCE: https://programming.guide/go/nil-slice-vs-empty-slice.html
+REFERENCE: https://programming.guide/go/nil-slice-vs-empty-slice.html
 */
 var PDUSessionStatusTestData = []nasType.PDUSessionStatus{
 	{nasMessage.ServiceRequestPDUSessionStatusType, 2, []uint8{}},

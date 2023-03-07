@@ -49,7 +49,8 @@ func NewGsmMessage() *GsmMessage {
 }
 
 // GmmHeader Octet1 protocolDiscriminator securityHeaderType
-//           Octet2 MessageType
+//
+//	Octet2 MessageType
 type GmmHeader struct {
 	Octet [3]uint8
 }

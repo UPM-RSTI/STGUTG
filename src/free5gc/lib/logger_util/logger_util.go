@@ -55,7 +55,7 @@ func (hook *FileHook) Levels() []logrus.Level {
 	}
 }
 
-//The Middleware will write the Gin logs to logrus.
+// The Middleware will write the Gin logs to logrus.
 func ginToLogrus(log *logrus.Entry) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		path := c.Request.URL.Path
@@ -78,7 +78,7 @@ func ginToLogrus(log *logrus.Entry) gin.HandlerFunc {
 	}
 }
 
-//NewGinWithLogrus - returns an Engine instance with the ginToLogrus and Recovery middleware already attached.
+// NewGinWithLogrus - returns an Engine instance with the ginToLogrus and Recovery middleware already attached.
 func NewGinWithLogrus(log *logrus.Entry) *gin.Engine {
 	engine := gin.New()
 	engine.Use(ginToLogrus(log), gin.Recovery())

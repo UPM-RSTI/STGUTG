@@ -1,4 +1,5 @@
-//+build debug
+//go:build debug
+// +build debug
 
 /*
  * Nudr_DataRepository API OpenAPI file

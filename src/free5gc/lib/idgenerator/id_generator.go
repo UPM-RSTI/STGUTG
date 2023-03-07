@@ -57,7 +57,7 @@ func (idGenerator *IDGenerator) Allocate() (id int64, err error) {
 }
 
 // param:
-//  - id: id to free
+//   - id: id to free
 func (idGenerator *IDGenerator) FreeID(id int64) {
 	idGenerator.lock.Lock()
 	defer idGenerator.lock.Unlock()
