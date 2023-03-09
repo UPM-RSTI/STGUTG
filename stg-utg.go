@@ -9,8 +9,6 @@ import (
 
 	"stgutg"
 	"tglib"
-
-	"github.com/ghedo/go.pkt/capture/pcap"
 )
 
 func main() {
@@ -87,10 +85,8 @@ func main() {
 		stgutg.ManageError("Error in connection to UPF", err)
 
 		fmt.Println(">> Opening traffic interfaces")
-		srcIface, err := pcap.Open(c.Configuration.SrcIface)
-		stgutg.ManageError("Error opening capturing interface", err)
-		dstIface, err := pcap.Open(c.Configuration.DstIface)
-		stgutg.ManageError("Error opening capturing interface", err)
+		ethSocketConn, err := tglib.NewEthSocketConn(c.Configuration.SrcIface)
+		stgutg.ManageError("Error creating Ethernet socket", err)
 
 		var stopProgram = make(chan os.Signal)
 		signal.Notify(stopProgram, syscall.SIGTERM)
@@ -118,8 +114,6 @@ func main() {
 			}
 
 			time.Sleep(1 * time.Second)
-			srcIface.Close()
-			dstIface.Close()
 			conn.Close()
 			upfConn.Close()
 
@@ -127,15 +121,12 @@ func main() {
 			os.Exit(0)
 		}()
 
-		srcIface.Activate()
 		fmt.Println(">> Listening to traffic responses")
-		go stgutg.ListenForResponses(srcIface,
-			dstIface,
-			c.Configuration.EthSrc,
-			c.Configuration.Gnb_gtp)
+		go stgutg.ListenForResponses(ethSocketConn,
+			upfConn)
 
 		fmt.Println(">> Waiting for traffic to send (Press Ctrl+C to quit)")
-		stgutg.SendTraffic(upfConn, srcIface, ipteids)
+		stgutg.SendTraffic(upfConn, ethSocketConn, ipteids)
 
 		time.Sleep(2 * time.Second)
 
