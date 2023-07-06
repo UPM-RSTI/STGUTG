@@ -25,6 +25,34 @@ import (
 	"github.com/ishidawataru/sctp"
 )
 
+// 3GPP TS 24.501 8.3.2.1
+// If the length of the element is not fixed it is represented with a negative number:
+// -1 and -2 for elements whose length is encoded with 1 and 2 bytes respectively
+var PDUSessionEstablishmentAcceptOptionalElementsLength = map[byte]int{
+	0x59: 2,
+	0x29: -1,
+	0x56: 2,
+	0x22: -1,
+	0x75: -2,
+	0x78: -2,
+	0x79: -2,
+	0x7B: -2,
+	0x25: -1,
+	0x17: -1,
+	0x18: 4,
+	0x77: -2,
+	0x66: -1,
+	0x1F: 3,
+}
+
+// 3GPP TS 24.501 8.3.2.1
+// These optional element have a total length of 1 byte and their ID's
+// are coded with octets 4 to 7 of that byte
+var PDUSessionEstablishmentAcceptOptionalElementsHalfByte = []byte{
+	0x80,
+	0xC0,
+}
+
 // EstablishPDU
 // Function that establishes a new PDU session for a given UE.
 // It requres a previously generated UE and an active SCTP connection with an AMF.
@@ -69,21 +97,21 @@ func EstablishPDU(sst int32, sd string, pdu []byte, ue *tglib.RanUeContext, conn
 	ManageError("Error establishing PDU", err)
 
 	// Recover assigned IP and TEID for the session.
-	// TODO: This is an ad-hoc solution for free5gc. Check if it works for other cores.
+	// Only works if 5G-EEA0 is used as cypher
+
+	PDUSessionResourceSetupItemSUReq := msg.InitiatingMessage.Value.PDUSessionResourceSetupRequest.ProtocolIEs.List[2].Value.PDUSessionResourceSetupListSUReq.List[0]
 
 	var bteid []byte = nil
-	var bip []byte = nil
+	bip := DecodePDUSessionNASPDU(PDUSessionResourceSetupItemSUReq.PDUSessionNASPDU.Value)
 
 	switch free5gc_version {
 	case "v3.0.5":
 
-		bteid = msg.InitiatingMessage.Value.PDUSessionResourceSetupRequest.ProtocolIEs.List[2].Value.PDUSessionResourceSetupListSUReq.List[0].PDUSessionResourceSetupRequestTransfer[13:17]
-		bip = msg.InitiatingMessage.Value.PDUSessionResourceSetupRequest.ProtocolIEs.List[2].Value.PDUSessionResourceSetupListSUReq.List[0].PDUSessionNASPDU.Value[41:45]
+		bteid = PDUSessionResourceSetupItemSUReq.PDUSessionResourceSetupRequestTransfer[13:17]
 
 	case "v3.2.1":
 
-		bteid = msg.InitiatingMessage.Value.PDUSessionResourceSetupRequest.ProtocolIEs.List[2].Value.PDUSessionResourceSetupListSUReq.List[0].PDUSessionResourceSetupRequestTransfer[27:31]
-		bip = msg.InitiatingMessage.Value.PDUSessionResourceSetupRequest.ProtocolIEs.List[2].Value.PDUSessionResourceSetupListSUReq.List[0].PDUSessionNASPDU.Value[39:43]
+		bteid = PDUSessionResourceSetupItemSUReq.PDUSessionResourceSetupRequestTransfer[27:31]
 
 	default:
 		ManageError("Error establishing PDU", fmt.Errorf("%s is not a supported Free5gc version", free5gc_version))
@@ -215,4 +243,63 @@ func ModifyPDU(sst int32, sd string, ue *tglib.RanUeContext, conn *sctp.SCTPConn
 	ManageError("Error establishing PDU", err)
 
 	return pdu
+}
+
+// DecodePDUSessionNASPDU
+// Function that extracts UE IP address from a given PDUSessionNASPDU message
+func DecodePDUSessionNASPDU(PDUSessionNASPDU []byte) []byte {
+	var bip []byte = nil
+
+	plainNAS5GSMessage := PDUSessionNASPDU[7:]
+
+	payloadContainerLength := binary.BigEndian.Uint16(plainNAS5GSMessage[4:6])
+	payloadContainerPlainNAS5GSMessage := plainNAS5GSMessage[6 : 6+payloadContainerLength]
+
+	QoSRulesLength := binary.BigEndian.Uint16(payloadContainerPlainNAS5GSMessage[5:7])
+
+	opElements := payloadContainerPlainNAS5GSMessage[5+2+QoSRulesLength+7:]
+	length := len(opElements)
+	index := 0
+	var opElementID byte
+	var opElementLength int
+	_, _ = opElementID, opElementLength // Needed to fix "declared but not used" error
+
+outerloop:
+	for index < length {
+		opElementID = opElements[index]
+
+		if opElementID == 0x29 { // PDU Address
+			bip = opElements[index+3 : index+7]
+			index += 7
+			continue
+		}
+
+		for _, id := range PDUSessionEstablishmentAcceptOptionalElementsHalfByte {
+			if opElementID&0xF0 == id {
+				index += 1
+				continue outerloop
+			}
+		}
+
+		opElementLength = PDUSessionEstablishmentAcceptOptionalElementsLength[opElementID]
+
+		if opElementLength > 0 {
+			index += opElementLength
+		} else if opElementLength == -1 { // 1 byte long length indicator
+			opElementLength = int(opElements[index+1])
+			index += 1 + 1 + opElementLength
+		} else if opElementLength == -2 { // 2 bytes long length indicator
+			opElementLength = int(binary.BigEndian.Uint16(opElements[index+1 : index+1+2]))
+			index += 1 + 2 + opElementLength
+		}
+	}
+
+	return bip
+}
+
+func printHex(bytearray []byte) {
+	for _, byteelement := range bytearray {
+		fmt.Printf("%02X ", byteelement)
+	}
+	fmt.Print("\n\n")
 }
