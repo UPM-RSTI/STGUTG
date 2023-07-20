@@ -101,21 +101,10 @@ func EstablishPDU(sst int32, sd string, pdu []byte, ue *tglib.RanUeContext, conn
 
 	PDUSessionResourceSetupItemSUReq := msg.InitiatingMessage.Value.PDUSessionResourceSetupRequest.ProtocolIEs.List[2].Value.PDUSessionResourceSetupListSUReq.List[0]
 
-	var bteid []byte = nil
+	var bupfip []byte = nil
+	_ = bupfip
 	bip := DecodePDUSessionNASPDU(PDUSessionResourceSetupItemSUReq.PDUSessionNASPDU.Value)
-
-	switch free5gc_version {
-	case "v3.0.5":
-
-		bteid = PDUSessionResourceSetupItemSUReq.PDUSessionResourceSetupRequestTransfer[13:17]
-
-	case "v3.2.1":
-
-		bteid = PDUSessionResourceSetupItemSUReq.PDUSessionResourceSetupRequestTransfer[27:31]
-
-	default:
-		ManageError("Error establishing PDU", fmt.Errorf("%s is not a supported Free5gc version", free5gc_version))
-	}
+	bteid, _ := DecodePDUSessionResourceSetupRequestTransfer(PDUSessionResourceSetupItemSUReq.PDUSessionResourceSetupRequestTransfer)
 
 	teid := binary.BigEndian.Uint32(bteid)
 	ip := net.IP(bip)
@@ -243,6 +232,36 @@ func ModifyPDU(sst int32, sd string, ue *tglib.RanUeContext, conn *sctp.SCTPConn
 	ManageError("Error establishing PDU", err)
 
 	return pdu
+}
+
+// DecodePDUSessionResourceSetupRequestTransfer
+// Function that extracts UPF IP address and TEID from a given PDUSessionResourceSetupRequestTransfer
+func DecodePDUSessionResourceSetupRequestTransfer(PDUSessionResourceSetupRequestTransfer []byte) ([]byte, []byte) {
+	var bteid []byte = nil
+	var bupfip []byte = nil
+
+	offset := 3 //  We skip number of protocolIEs as we are only interested in the first or second one
+
+	for offset < len(PDUSessionResourceSetupRequestTransfer) {
+
+		if int(binary.BigEndian.Uint16(PDUSessionResourceSetupRequestTransfer[offset:offset+2])) != 139 {
+			offset += 3 + int(PDUSessionResourceSetupRequestTransfer[offset+3]) + 1
+		} else {
+			offset += 3
+
+			UPTrasportLayerInfoLength := int(PDUSessionResourceSetupRequestTransfer[offset])
+			offset += 1
+
+			UPTransportLayerInfo := PDUSessionResourceSetupRequestTransfer[offset : offset+UPTrasportLayerInfoLength]
+
+			bteid = UPTransportLayerInfo[UPTrasportLayerInfoLength-4:]
+			bupfip = UPTransportLayerInfo[UPTrasportLayerInfoLength-8 : UPTrasportLayerInfoLength-4]
+
+			break
+		}
+	}
+
+	return bteid, bupfip
 }
 
 // DecodePDUSessionNASPDU
