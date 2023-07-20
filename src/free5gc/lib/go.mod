@@ -1,6 +1,6 @@
 module free5gclib
 
-go 1.14
+go 1.20
 
 replace (
         stgutg => ./src/stgutg

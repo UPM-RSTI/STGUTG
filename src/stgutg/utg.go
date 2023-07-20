@@ -67,7 +67,7 @@ func ListenForResponses(ethSocketConn tglib.EthSocketConn, upfConn *net.UDPConn)
 // generate the user traffic (src), emulating the UEs.
 // It checks the source IP address to determine the TEID to use when adding the GTP
 // header and then sends the traffic to the UPF.
-func SendTraffic(upfConn *net.UDPConn, ethSocketConn tglib.EthSocketConn, teids []Ipteid) {
+func SendTraffic(upfConn *net.UDPConn, ethSocketConn tglib.EthSocketConn, teidUpfIPs map[[4]byte]TeidUpfIp) {
 
 	data := make([]byte, 1500)
 
@@ -87,7 +87,7 @@ func SendTraffic(upfConn *net.UDPConn, ethSocketConn tglib.EthSocketConn, teids 
 			src_ip := ethFrame[14+12 : 14+16]
 
 			//fmt.Println(src_ip)
-			teid := GetTEID(src_ip, teids)
+			teid := teidUpfIPs[([4]byte)(src_ip)].teid
 
 			gtpHdr, err := tglib.BuildGTPv1Header(false, 0, false, 0, false, 0, uint16(len(ethFrame[14:])), teid)
 			ManageError("Error capturing and sending traffic", err)

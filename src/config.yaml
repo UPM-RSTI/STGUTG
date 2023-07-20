@@ -4,8 +4,6 @@ info:
 
 configuration:
 
-  free5gc_version: v3.2.1
-
 # Network Functions
   amf_ngap: 10.200.200.3
   amf_port: 38412 #48412
@@ -14,12 +12,10 @@ configuration:
   upf_port: 2152
 
   gnb_gtp: 20.200.200.1
-  gnbg_port: 9487
+  gnbg_port: 2152
 
   gnb_ngap: 10.200.200.4
-  gnbn_port: 2152
-
-  ue_ori: 10.60.0.1
+  gnbn_port: 9487
 
 # UE
   initial_imsi: 208930000000003
@@ -39,11 +35,9 @@ configuration:
   sst: 1
   sd: "010203"
 
-  # Interaces and MACs for traffic
+  # Interaces for traffic
   src_iface: "enp0s10"
   dst_iface: "enp0s9"
-  eth_src: "08002762c6b5"
-  eth_dst: "080027ac26b4"
 
   # Number of UEs to use in traffic mode
   ue_number: 2

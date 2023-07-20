@@ -57,15 +57,13 @@ var PDUSessionEstablishmentAcceptOptionalElementsHalfByte = []byte{
 // Function that establishes a new PDU session for a given UE.
 // It requres a previously generated UE and an active SCTP connection with an AMF.
 // It returns a tuple of assigned IP for the UE and the corresponding TEID.
-func EstablishPDU(sst int32, sd string, pdu []byte, ue *tglib.RanUeContext, conn *sctp.SCTPConn, gnb_gtp string, free5gc_version string) Ipteid {
+func EstablishPDU(sst int32, sd string, pdu []byte, ue *tglib.RanUeContext, conn *sctp.SCTPConn, gnb_gtp string, teidUpfIPs map[[4]byte]TeidUpfIp) {
 
 	var recvMsg = make([]byte, 2048)
 	sNssai := models.Snssai{
 		Sst: sst,
 		Sd:  sd,
 	}
-
-	var it Ipteid
 
 	ueSupi := strings.Split(ue.Supi, "-")[1]
 	supiInt, _ := strconv.Atoi(ueSupi)
@@ -101,15 +99,13 @@ func EstablishPDU(sst int32, sd string, pdu []byte, ue *tglib.RanUeContext, conn
 
 	PDUSessionResourceSetupItemSUReq := msg.InitiatingMessage.Value.PDUSessionResourceSetupRequest.ProtocolIEs.List[2].Value.PDUSessionResourceSetupListSUReq.List[0]
 
-	var bupfip []byte = nil
-	_ = bupfip
 	bip := DecodePDUSessionNASPDU(PDUSessionResourceSetupItemSUReq.PDUSessionNASPDU.Value)
-	bteid, _ := DecodePDUSessionResourceSetupRequestTransfer(PDUSessionResourceSetupItemSUReq.PDUSessionResourceSetupRequestTransfer)
+	bteid, bupfip := DecodePDUSessionResourceSetupRequestTransfer(PDUSessionResourceSetupItemSUReq.PDUSessionResourceSetupRequestTransfer)
 
 	teid := binary.BigEndian.Uint32(bteid)
-	ip := net.IP(bip)
-	it.ueip = ip
-	it.teid = teid
+	upfip := net.IP(bupfip)
+
+	teidUpfIPs[bip] = TeidUpfIp{teid, upfip}
 
 	sendMsg, err = tglib.GetPDUSessionResourceSetupResponse(ue.AmfUeNgapId,
 		ue.RanUeNgapId,
@@ -119,8 +115,6 @@ func EstablishPDU(sst int32, sd string, pdu []byte, ue *tglib.RanUeContext, conn
 
 	_, err = conn.Write(sendMsg)
 	ManageError("Error establishing PDU", err)
-
-	return it
 }
 
 // ReleasePDU
@@ -266,8 +260,8 @@ func DecodePDUSessionResourceSetupRequestTransfer(PDUSessionResourceSetupRequest
 
 // DecodePDUSessionNASPDU
 // Function that extracts UE IP address from a given PDUSessionNASPDU message
-func DecodePDUSessionNASPDU(PDUSessionNASPDU []byte) []byte {
-	var bip []byte = nil
+func DecodePDUSessionNASPDU(PDUSessionNASPDU []byte) [4]byte {
+	var bip [4]byte
 
 	plainNAS5GSMessage := PDUSessionNASPDU[7:]
 
@@ -288,9 +282,9 @@ outerloop:
 		opElementID = opElements[index]
 
 		if opElementID == 0x29 { // PDU Address
-			bip = opElements[index+3 : index+7]
+			bip = ([4]byte)(opElements[index+3 : index+7])
 			index += 7
-			continue
+			break outerloop
 		}
 
 		for _, id := range PDUSessionEstablishmentAcceptOptionalElementsHalfByte {

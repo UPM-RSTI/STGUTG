@@ -15,7 +15,7 @@ func main() {
 
 	var ueList []*tglib.RanUeContext
 	var pduList [][]byte
-	var ipteids []stgutg.Ipteid
+	teidUpfIPs := make(map[[4]byte]stgutg.TeidUpfIp)
 
 	var c stgutg.Conf
 	c.GetConfiguration()
@@ -30,7 +30,7 @@ func main() {
 		conn, err := tglib.ConnectToAmf(c.Configuration.Amf_ngap,
 			c.Configuration.Gnb_ngap,
 			c.Configuration.Amf_port,
-			c.Configuration.Gnbg_port)
+			c.Configuration.Gnbn_port)
 		stgutg.ManageError("Error in connection to AMF", err)
 
 		fmt.Println(">> Managing NG Setup")
@@ -62,25 +62,24 @@ func main() {
 		i := 0
 		for _, pdu := range pduList {
 			fmt.Println(">> Establishing PDU session for", ueList[i].Supi)
-			ipteid := stgutg.EstablishPDU(c.Configuration.SST,
+			stgutg.EstablishPDU(c.Configuration.SST,
 				c.Configuration.SD,
 				pdu,
 				ueList[i],
 				conn,
 				c.Configuration.Gnb_gtp,
-				c.Configuration.Free5gc_version)
+				teidUpfIPs)
 
-			ipteids = append(ipteids, ipteid)
 			i++
 			time.Sleep(1 * time.Second)
 		}
 
-		fmt.Println(ipteids)
+		fmt.Println(teidUpfIPs)
 
 		fmt.Println(">> Connecting to UPF")
 		upfConn, err := tglib.ConnectToUpf(c.Configuration.Gnb_gtp,
 			c.Configuration.Upf_gtp,
-			c.Configuration.Gnbn_port,
+			c.Configuration.Gnbg_port,
 			c.Configuration.Upf_port)
 		stgutg.ManageError("Error in connection to UPF", err)
 
@@ -126,7 +125,7 @@ func main() {
 			upfConn)
 
 		fmt.Println(">> Waiting for traffic to send (Press Ctrl+C to quit)")
-		stgutg.SendTraffic(upfConn, ethSocketConn, ipteids)
+		stgutg.SendTraffic(upfConn, ethSocketConn, teidUpfIPs)
 
 		time.Sleep(2 * time.Second)
 
@@ -158,7 +157,7 @@ func main() {
 		conn, err := tglib.ConnectToAmf(c.Configuration.Amf_ngap,
 			c.Configuration.Gnb_ngap,
 			c.Configuration.Amf_port,
-			c.Configuration.Gnbg_port)
+			c.Configuration.Gnbn_port)
 		stgutg.ManageError("Error in connection to AMF", err)
 
 		fmt.Println(">> Managing NG Setup")
@@ -193,15 +192,14 @@ func main() {
 			fmt.Println(">> [ PDU ESTABLISHMENT TEST", i+1, "]")
 
 			fmt.Println(">> Establishing PDU session for", ueList[i].Supi)
-			ipteid := stgutg.EstablishPDU(c.Configuration.SST,
+			stgutg.EstablishPDU(c.Configuration.SST,
 				c.Configuration.SD,
 				pduList[i],
 				ueList[i],
 				conn,
 				c.Configuration.Gnb_gtp,
-				c.Configuration.Free5gc_version)
+				teidUpfIPs)
 
-			ipteids = append(ipteids, ipteid)
 			time.Sleep(1 * time.Second)
 		}
 

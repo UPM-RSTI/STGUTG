@@ -1,6 +1,6 @@
 module tglib
 
-go 1.14
+go 1.20
 
 replace (
         free5gc/lib => ./src/free5gc/lib
