@@ -27,7 +27,6 @@ type Conf struct {
 		Gnbg_port                 int    `yaml:"gnbg_port"`
 		Gnb_ngap                  string `yaml:"gnb_ngap"`
 		Gnbn_port                 int    `yaml:"gnbn_port"`
-		Upf_gtp                   string `yaml:"upf_gtp"`
 		Upf_port                  int    `yaml:"upf_port"`
 		Gnb_id                    string `yaml:"gnb_id"`
 		Gnb_bitlength             uint64 `yaml:"gnb_bitlength"`
@@ -40,7 +39,6 @@ type Conf struct {
 		SST                       int32  `yaml:"sst"`
 		SD                        string `yaml:"sd"`
 		SrcIface                  string `yaml:"src_iface"`
-		DstIface                  string `yaml:"dst_iface"`
 		UeNumber                  int    `yaml:"ue_number"`
 		Test_ue_registation       int    `yaml:"ue_registration"`
 		Test_ue_pdu_establishment int    `yaml:"ue_pdu"`
