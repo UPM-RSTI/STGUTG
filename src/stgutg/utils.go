@@ -8,13 +8,13 @@ package stgutg
 import (
 	"free5gc/lib/nas/nasMessage"
 	"free5gc/lib/nas/nasType"
+	"syscall"
 
 	"gopkg.in/yaml.v2"
 
 	"bufio"
 	"fmt"
 	"io/ioutil"
-	"net"
 	"os"
 	"strings"
 )
@@ -53,8 +53,8 @@ type Conf struct {
 // TeidUpfIp
 // Structure to store tuples of IP addresses and TEIDs.
 type TeidUpfIp struct {
-	teid  uint32
-	upfip net.IP
+	teid    uint32
+	upfAddr *syscall.SockaddrInet4
 }
 
 func (c *Conf) GetConfiguration() Conf {

@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -62,12 +64,15 @@ func main() {
 		i := 0
 		for _, pdu := range pduList {
 			fmt.Println(">> Establishing PDU session for", ueList[i].Supi)
+
+			// PDU info stored in teidUpfIPs
 			stgutg.EstablishPDU(c.Configuration.SST,
 				c.Configuration.SD,
 				pdu,
 				ueList[i],
 				conn,
 				c.Configuration.Gnb_gtp,
+				c.Configuration.Upf_port,
 				teidUpfIPs)
 
 			i++
@@ -77,10 +82,7 @@ func main() {
 		fmt.Println(teidUpfIPs)
 
 		fmt.Println(">> Connecting to UPF")
-		upfConn, err := tglib.ConnectToUpf(c.Configuration.Gnb_gtp,
-			c.Configuration.Upf_gtp,
-			c.Configuration.Gnbg_port,
-			c.Configuration.Upf_port)
+		upfFD, err := tglib.ConnectToUpf(c.Configuration.Gnbg_port)
 		stgutg.ManageError("Error in connection to UPF", err)
 
 		fmt.Println(">> Opening traffic interfaces")
@@ -91,43 +93,50 @@ func main() {
 		signal.Notify(stopProgram, syscall.SIGTERM)
 		signal.Notify(stopProgram, syscall.SIGINT)
 
-		go func() {
-			sig := <-stopProgram
-			fmt.Println("\n>> Exiting program:", sig, "found")
+		ctx, cancelFunc := context.WithCancel(context.Background())
+		wg := &sync.WaitGroup{}
 
-			for _, ue := range ueList {
-				fmt.Println(">> Releasing PDU session for", ue.Supi)
-				stgutg.ReleasePDU(c.Configuration.SST,
-					c.Configuration.SD,
-					ue,
-					conn)
-				time.Sleep(1 * time.Second)
-			}
-
-			for _, ue := range ueList {
-				fmt.Println(">> Deregistering UE", ue.Supi)
-				stgutg.DeregisterUE(ue,
-					c.Configuration.Mnc,
-					conn)
-				time.Sleep(2 * time.Second)
-			}
-
-			time.Sleep(1 * time.Second)
-			conn.Close()
-			upfConn.Close()
-
-			time.Sleep(1 * time.Second)
-			os.Exit(0)
-		}()
+		wg.Add(2)
 
 		fmt.Println(">> Listening to traffic responses")
-		go stgutg.ListenForResponses(ethSocketConn,
-			upfConn)
+		go stgutg.ListenForResponses(ethSocketConn, upfFD, ctx, wg)
 
 		fmt.Println(">> Waiting for traffic to send (Press Ctrl+C to quit)")
-		stgutg.SendTraffic(upfConn, ethSocketConn, teidUpfIPs)
+		go stgutg.SendTraffic(upfFD, ethSocketConn, teidUpfIPs, ctx, wg)
 
-		time.Sleep(2 * time.Second)
+		// Program interrupted
+		sig := <-stopProgram
+		fmt.Println("\n>> Exiting program:", sig, "found")
+
+		cancelFunc() // Call for UTG to shut down
+
+		for _, ue := range ueList {
+			fmt.Println(">> Releasing PDU session for", ue.Supi)
+			stgutg.ReleasePDU(c.Configuration.SST,
+				c.Configuration.SD,
+				ue,
+				conn)
+			time.Sleep(1 * time.Second)
+		}
+
+		for _, ue := range ueList {
+			fmt.Println(">> Deregistering UE", ue.Supi)
+			stgutg.DeregisterUE(ue,
+				c.Configuration.Mnc,
+				conn)
+			time.Sleep(2 * time.Second)
+		}
+
+		time.Sleep(1 * time.Second)
+		conn.Close()
+
+		wg.Wait() // Wait for UTG to shut down
+
+		syscall.Close(upfFD)
+		syscall.Close(ethSocketConn.Fd)
+
+		time.Sleep(1 * time.Second)
+		os.Exit(0)
 
 	} else if mode == 2 {
 		fmt.Println("TEST MODE")
@@ -198,6 +207,7 @@ func main() {
 				ueList[i],
 				conn,
 				c.Configuration.Gnb_gtp,
+				c.Configuration.Upf_port,
 				teidUpfIPs)
 
 			time.Sleep(1 * time.Second)

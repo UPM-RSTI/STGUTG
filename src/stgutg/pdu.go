@@ -7,6 +7,8 @@ package stgutg
 // Date: 9/6/21
 
 import (
+	"syscall"
+
 	"github.com/free5gc/nas"
 	"github.com/free5gc/nas/nasMessage"
 	"github.com/free5gc/nas/nasTestpacket"
@@ -15,7 +17,6 @@ import (
 
 	"encoding/binary"
 	"fmt"
-	"net"
 	"tglib"
 	"time"
 
@@ -57,7 +58,7 @@ var PDUSessionEstablishmentAcceptOptionalElementsHalfByte = []byte{
 // Function that establishes a new PDU session for a given UE.
 // It requres a previously generated UE and an active SCTP connection with an AMF.
 // It returns a tuple of assigned IP for the UE and the corresponding TEID.
-func EstablishPDU(sst int32, sd string, pdu []byte, ue *tglib.RanUeContext, conn *sctp.SCTPConn, gnb_gtp string, teidUpfIPs map[[4]byte]TeidUpfIp) {
+func EstablishPDU(sst int32, sd string, pdu []byte, ue *tglib.RanUeContext, conn *sctp.SCTPConn, gnb_gtp string, upf_port int, teidUpfIPs map[[4]byte]TeidUpfIp) {
 
 	var recvMsg = make([]byte, 2048)
 	sNssai := models.Snssai{
@@ -103,9 +104,9 @@ func EstablishPDU(sst int32, sd string, pdu []byte, ue *tglib.RanUeContext, conn
 	bteid, bupfip := DecodePDUSessionResourceSetupRequestTransfer(PDUSessionResourceSetupItemSUReq.PDUSessionResourceSetupRequestTransfer)
 
 	teid := binary.BigEndian.Uint32(bteid)
-	upfip := net.IP(bupfip)
+	upfAddr := syscall.SockaddrInet4{Addr: ([4]byte)(bupfip), Port: upf_port}
 
-	teidUpfIPs[bip] = TeidUpfIp{teid, upfip}
+	teidUpfIPs[bip] = TeidUpfIp{teid, &upfAddr}
 
 	sendMsg, err = tglib.GetPDUSessionResourceSetupResponse(ue.AmfUeNgapId,
 		ue.RanUeNgapId,
