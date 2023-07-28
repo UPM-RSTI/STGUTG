@@ -31,9 +31,6 @@ func NewEthSocketConn(ifname string) (EthSocketConn, error) {
 		return EthSocketConn{}, fmt.Errorf("Bind raw socket: %s", err)
 	}
 
-	// Setup a timeout of 3 seconds for listening to the raw socket
-	syscall.SetsockoptTimeval(fd, syscall.SOL_SOCKET, syscall.SO_RCVTIMEO, &(syscall.Timeval{Sec: 3, Usec: 0}))
-
 	socketConn := EthSocketConn{}
 	socketConn.Iface = iface
 	socketConn.Addr = addr

@@ -5,15 +5,15 @@ info:
 configuration:
 
 # Network Functions
-  amf_ngap: 10.200.200.3
+  amf_ngap: 192.168.60.11
   amf_port: 38412 #48412
 
   upf_port: 2152
 
-  gnb_gtp: 20.200.200.1
+  gnb_gtp: 192.168.60.10
   gnbg_port: 2152
 
-  gnb_ngap: 10.200.200.4
+  gnb_ngap: 192.168.60.10
   gnbn_port: 9487
 
 # UE

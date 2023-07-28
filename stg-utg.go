@@ -1,5 +1,10 @@
 package main
 
+// #cgo CFLAGS: -pthread
+// #include <signal.h>
+// #include <pthread.h>
+import "C"
+
 import (
 	"context"
 	"fmt"
@@ -95,6 +100,7 @@ func main() {
 
 		ctx, cancelFunc := context.WithCancel(context.Background())
 		wg := &sync.WaitGroup{}
+		utg_ul_thread_chan := make(chan stgutg.Thread)
 
 		wg.Add(2)
 
@@ -102,13 +108,19 @@ func main() {
 		go stgutg.ListenForResponses(ethSocketConn, upfFD, ctx, wg)
 
 		fmt.Println(">> Waiting for traffic to send (Press Ctrl+C to quit)")
-		go stgutg.SendTraffic(upfFD, ethSocketConn, teidUpfIPs, ctx, wg)
+		go stgutg.SendTraffic(upfFD, ethSocketConn, teidUpfIPs, ctx, wg, utg_ul_thread_chan)
+
+		utg_ul_thread := <-utg_ul_thread_chan
 
 		// Program interrupted
 		sig := <-stopProgram
 		fmt.Println("\n>> Exiting program:", sig, "found")
 
 		cancelFunc() // Call for UTG to shut down
+
+		// Stop packet capture for both interfaces of UTG
+		C.pthread_kill(C.ulong(utg_ul_thread.Id), C.SIGUSR1)
+		syscall.Shutdown(upfFD, syscall.SHUT_RD)
 
 		for _, ue := range ueList {
 			fmt.Println(">> Releasing PDU session for", ue.Supi)
@@ -130,8 +142,10 @@ func main() {
 		time.Sleep(1 * time.Second)
 		conn.Close()
 
-		wg.Wait() // Wait for UTG to shut down
+		fmt.Println(">> Waiting for UTG to shut down")
+		wg.Wait() // Wait for UTG to shut down, then close interfaces
 
+		fmt.Println(">> Closing network interfaces")
 		syscall.Close(upfFD)
 		syscall.Close(ethSocketConn.Fd)
 

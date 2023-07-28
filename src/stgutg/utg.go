@@ -9,8 +9,26 @@ package stgutg
 // Version: 0.9
 // Date: 9/6/21
 
+// #cgo CFLAGS: -pthread
+// #include <signal.h>
+// #include <pthread.h>
+// #include <string.h>
+//
+//
+// void handler(int sig) {}
+//
+// void setsigaction() {
+// 	struct sigaction act;
+// 	bzero(&act, sizeof(act));
+// 	act.sa_handler = &handler;
+// 	sigaction(SIGUSR1, &act, NULL);
+// }
+import "C"
+
 import (
 	"context"
+	"fmt"
+	"runtime"
 	"sync"
 	"tglib"
 
@@ -18,6 +36,10 @@ import (
 	"encoding/hex"
 	"syscall"
 )
+
+type Thread struct {
+	Id C.ulong
+}
 
 // ListenForResponses
 // Function that keeps listening in the network interface connected to the UPF (dst)
@@ -44,8 +66,9 @@ func ListenForResponses(ethSocketConn tglib.EthSocketConn, upfFD int, ctx contex
 
 		udpPayloadSize, _, err := syscall.Recvfrom(upfFD, rcvBuf, 0)
 		if err != nil {
-			// TODO: Timeout introduced in socket generates errors, filter them
-			// fmt.Printf("Error reading udp socket: %s\n", err)
+			fmt.Printf("Error reading udp socket: %s\n", err)
+			continue
+		} else if udpPayloadSize == 0 {
 			continue
 		}
 
@@ -78,9 +101,14 @@ func ListenForResponses(ethSocketConn tglib.EthSocketConn, upfFD int, ctx contex
 // generate the user traffic (src), emulating the UEs.
 // It checks the source IP address to determine the TEID to use when adding the GTP
 // header and then sends the traffic to the UPF.
-func SendTraffic(upfFD int, ethSocketConn tglib.EthSocketConn, teidUpfIPs map[[4]byte]TeidUpfIp, ctx context.Context, wg *sync.WaitGroup) {
+func SendTraffic(upfFD int, ethSocketConn tglib.EthSocketConn, teidUpfIPs map[[4]byte]TeidUpfIp, ctx context.Context, wg *sync.WaitGroup, thread_id_chan chan Thread) {
+	runtime.LockOSThread() // Force this goroutine to always run on the same OS thread (Maybe not needed)
 
 	defer wg.Done()
+
+	thread_id_chan <- Thread{Id: C.pthread_self()}
+
+	C.setsigaction()
 
 	data := make([]byte, 1500)
 
@@ -92,10 +120,11 @@ func SendTraffic(upfFD int, ethSocketConn tglib.EthSocketConn, teidUpfIPs map[[4
 		default:
 		}
 
-		frameSize, _, err := syscall.Recvfrom(ethSocketConn.Fd, data, 0)
+		frameSize, err := syscall.Read(ethSocketConn.Fd, data)
 		if err != nil {
-			// TODO: Timeout introduced in socket generates errors, filter them
-			// fmt.Printf("Error receiving traffic: %s\n", err)
+			if err != syscall.EINTR {
+				fmt.Printf("Error receiving traffic: %s\n", err)
+			}
 			continue
 		}
 

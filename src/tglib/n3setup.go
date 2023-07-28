@@ -27,8 +27,5 @@ func ConnectToUpf(gnbPort int) (int, error) {
 		return 0, fmt.Errorf("Bind socket: %s", err)
 	}
 
-	// Setup a timeout of 3 seconds for listening to the raw socket
-	syscall.SetsockoptTimeval(fd, syscall.SOL_SOCKET, syscall.SO_RCVTIMEO, &(syscall.Timeval{Sec: 3, Usec: 0}))
-
 	return fd, nil
 }
