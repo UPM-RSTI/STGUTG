@@ -2,7 +2,7 @@ package path_util
 
 import (
 	"bufio"
-	"free5gc/lib/path_util/logger"
+	"free5gclib/path_util/logger"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,7 +15,7 @@ import (
  * This package is used to locate the root directory of gofree5gc project
  * Compatible with Windows and Linux
  *
- * Please import "free5gc/lib/path_util"
+ * Please import "free5gclib/path_util"
  *
  * Return value:
  * A string value of the relative path between the working directory and the root directory of the gofree5gc project

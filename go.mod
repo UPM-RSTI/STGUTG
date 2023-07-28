@@ -14,11 +14,8 @@ require (
 )
 
 require (
-	free5gc/lib v0.0.0-00010101000000-000000000000 // indirect
-	github.com/aead/cmac v0.0.0-20160719120800-7af84192f0b1 // indirect
 	github.com/antonfisher/nested-logrus-formatter v1.3.1 // indirect
 	github.com/calee0219/fatal v0.0.1 // indirect
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
 	github.com/free5gc/aper v1.0.2 // indirect
 	github.com/free5gc/logger_conf v1.0.0 // indirect
 	github.com/free5gc/logger_util v1.0.0 // indirect
@@ -41,9 +38,10 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
+	github.com/stretchr/testify v1.8.1 // indirect
 	github.com/ugorji/go/codec v1.2.1 // indirect
-	golang.org/x/crypto v0.0.0-20201208171446-5f87f3452ae9 // indirect
-	golang.org/x/net v0.0.0-20210805182204-aaa1db679c0d // indirect
+	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d // indirect
+	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2 // indirect
 	golang.org/x/sys v0.0.0-20220715151400-c0bba94af5f8 // indirect
 	google.golang.org/protobuf v1.25.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

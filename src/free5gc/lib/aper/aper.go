@@ -2,7 +2,7 @@ package aper
 
 import (
 	"fmt"
-	"free5gc/lib/aper/logger"
+	"free5gclib/aper/logger"
 	"path"
 	"reflect"
 	"runtime"

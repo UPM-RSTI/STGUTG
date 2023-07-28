@@ -3,9 +3,9 @@ package nasMessage_test
 import (
 	"bytes"
 	"fmt"
-	"free5gc/lib/nas"
-	"free5gc/lib/nas/nasMessage"
-	"free5gc/lib/nas/nasType"
+	"free5gclib/nas"
+	"free5gclib/nas/nasMessage"
+	"free5gclib/nas/nasType"
 	"reflect"
 	"testing"
 

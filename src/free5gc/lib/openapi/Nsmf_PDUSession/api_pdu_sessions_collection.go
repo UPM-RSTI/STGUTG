@@ -11,8 +11,8 @@ package Nsmf_PDUSession
 
 import (
 	"context"
-	"free5gc/lib/openapi"
-	"free5gc/lib/openapi/models"
+	"free5gclib/openapi"
+	"free5gclib/openapi/models"
 	"io/ioutil"
 	"net/http"
 	"net/url"

@@ -6,8 +6,8 @@ package stgutg
 // Date: 9/6/21
 
 import (
-	"free5gc/lib/nas/nasMessage"
-	"free5gc/lib/nas/nasType"
+	"free5gclib/nas/nasMessage"
+	"free5gclib/nas/nasType"
 	"syscall"
 
 	"gopkg.in/yaml.v2"

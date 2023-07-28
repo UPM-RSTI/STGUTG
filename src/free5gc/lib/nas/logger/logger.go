@@ -1,8 +1,8 @@
 package logger
 
 import (
-	"free5gc/lib/logger_conf"
-	"free5gc/lib/logger_util"
+	"free5gclib/logger_conf"
+	"free5gclib/logger_util"
 	"os"
 	"time"
 

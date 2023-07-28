@@ -1,7 +1,7 @@
 package TestRegistrationProcedure
 
 import (
-	"free5gc/lib/openapi/models"
+	"free5gclib/openapi/models"
 )
 
 const (

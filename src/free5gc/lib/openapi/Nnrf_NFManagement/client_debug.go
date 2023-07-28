@@ -16,7 +16,7 @@ import (
 	"crypto/tls"
 	"net/http"
 
-	"free5gc/lib/http2_util"
+	"free5gclib/http2_util"
 
 	"golang.org/x/net/http2"
 )

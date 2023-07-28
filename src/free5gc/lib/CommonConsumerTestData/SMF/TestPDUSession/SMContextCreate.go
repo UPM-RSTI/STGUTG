@@ -2,10 +2,11 @@ package TestPDUSession
 
 import (
 	"bytes"
-	"free5gc/lib/nas"
-	"free5gc/lib/nas/nasMessage"
-	"free5gc/lib/nas/nasType"
-	"free5gc/lib/openapi/models"
+	"free5gclib/nas"
+	"free5gclib/nas/nasMessage"
+	"free5gclib/nas/nasType"
+	"free5gclib/openapi/models"
+
 	"github.com/google/uuid"
 )
 

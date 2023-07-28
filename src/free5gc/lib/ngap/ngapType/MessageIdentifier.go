@@ -1,8 +1,8 @@
 package ngapType
 
-import "free5gc/lib/aper"
+import "free5gclib/aper"
 
-// Need to import "free5gc/lib/aper" if it uses "aper"
+// Need to import "free5gclib/aper" if it uses "aper"
 
 type MessageIdentifier struct {
 	Value aper.BitString `aper:"sizeLB:16,sizeUB:16"`

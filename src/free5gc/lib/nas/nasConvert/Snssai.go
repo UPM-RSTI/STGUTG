@@ -2,9 +2,9 @@ package nasConvert
 
 import (
 	"encoding/hex"
-	"free5gc/lib/nas/logger"
-	"free5gc/lib/nas/nasType"
-	"free5gc/lib/openapi/models"
+	"free5gclib/nas/logger"
+	"free5gclib/nas/nasType"
+	"free5gclib/openapi/models"
 )
 
 func SnssaiToModels(nasSnssai *nasType.SNSSAI) (snssai models.Snssai) {

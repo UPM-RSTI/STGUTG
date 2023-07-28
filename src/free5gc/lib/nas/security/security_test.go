@@ -2,8 +2,8 @@ package security_test
 
 import (
 	"encoding/binary"
-	"free5gc/lib/CommonConsumerTestData/AMF/TestAmf/TestNeaNia"
-	"free5gc/lib/nas/security"
+	"free5gclib/CommonConsumerTestData/AMF/TestAmf/TestNeaNia"
+	"free5gclib/nas/security"
 	"testing"
 )
 

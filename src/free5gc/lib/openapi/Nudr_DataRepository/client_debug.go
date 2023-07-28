@@ -14,7 +14,7 @@ package Nudr_DataRepository
 
 import (
 	"crypto/tls"
-	"free5gc/lib/http2_util"
+	"free5gclib/http2_util"
 	"net/http"
 
 	"golang.org/x/net/http2"

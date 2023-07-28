@@ -2,8 +2,8 @@ package ngapConvert
 
 import (
 	"encoding/binary"
-	"free5gc/lib/aper"
-	"free5gc/lib/ngap/logger"
+	"free5gclib/aper"
+	"free5gclib/ngap/logger"
 )
 
 /*

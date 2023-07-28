@@ -1,7 +1,8 @@
 package TestAmf
 
 import (
-	"free5gc/lib/openapi/models"
+	"free5gclib/openapi/models"
+
 	"github.com/google/uuid"
 )
 

@@ -1,7 +1,7 @@
 package path_util
 
 import (
-	"free5gc/lib/path_util/logger"
+	"free5gclib/path_util/logger"
 	"testing"
 )
 

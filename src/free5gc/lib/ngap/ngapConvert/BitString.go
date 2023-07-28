@@ -2,8 +2,8 @@ package ngapConvert
 
 import (
 	"encoding/hex"
-	"free5gc/lib/aper"
-	"free5gc/lib/ngap/logger"
+	"free5gclib/aper"
+	"free5gclib/ngap/logger"
 )
 
 func BitStringToHex(bitString *aper.BitString) (hexString string) {

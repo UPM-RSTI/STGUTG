@@ -2,8 +2,8 @@ package nasConvert
 
 import (
 	"encoding/hex"
-	"free5gc/lib/nas/logger"
-	"free5gc/lib/openapi/models"
+	"free5gclib/nas/logger"
+	"free5gclib/openapi/models"
 	"reflect"
 )
 

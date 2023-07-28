@@ -1,9 +1,10 @@
 package version_test
 
 import (
-	"free5gc/lib/milenage/version"
-	"github.com/stretchr/testify/assert"
+	"free5gclib/milenage/version"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestVersion(t *testing.T) {

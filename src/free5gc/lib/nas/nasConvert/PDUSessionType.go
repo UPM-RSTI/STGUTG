@@ -1,8 +1,8 @@
 package nasConvert
 
 import (
-	"free5gc/lib/nas/nasMessage"
-	"free5gc/lib/openapi/models"
+	"free5gclib/nas/nasMessage"
+	"free5gclib/openapi/models"
 )
 
 func PDUSessionTypeToModels(nasPduSessType uint8) (pduSessType models.PduSessionType) {

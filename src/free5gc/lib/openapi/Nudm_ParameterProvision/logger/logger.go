@@ -7,8 +7,8 @@ import (
 	formatter "github.com/antonfisher/nested-logrus-formatter"
 	"github.com/sirupsen/logrus"
 
-	"free5gc/lib/logger_conf"
-	"free5gc/lib/logger_util"
+	"free5gclib/logger_conf"
+	"free5gclib/logger_util"
 )
 
 var log *logrus.Logger
