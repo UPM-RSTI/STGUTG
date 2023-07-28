@@ -94,6 +94,9 @@ func main() {
 		ethSocketConn, err := tglib.NewEthSocketConn(c.Configuration.SrcIface)
 		stgutg.ManageError("Error creating Ethernet socket", err)
 
+		ipSocketConn, err := tglib.NewIPSocketConn()
+		stgutg.ManageError("Error creating IP socket", err)
+
 		var stopProgram = make(chan os.Signal)
 		signal.Notify(stopProgram, syscall.SIGTERM)
 		signal.Notify(stopProgram, syscall.SIGINT)
@@ -105,7 +108,7 @@ func main() {
 		wg.Add(2)
 
 		fmt.Println(">> Listening to traffic responses")
-		go stgutg.ListenForResponses(ethSocketConn, upfFD, ctx, wg)
+		go stgutg.ListenForResponses(ipSocketConn, upfFD, ctx, wg)
 
 		fmt.Println(">> Waiting for traffic to send (Press Ctrl+C to quit)")
 		go stgutg.SendTraffic(upfFD, ethSocketConn, teidUpfIPs, ctx, wg, utg_ul_thread_chan)
@@ -148,6 +151,7 @@ func main() {
 		fmt.Println(">> Closing network interfaces")
 		syscall.Close(upfFD)
 		syscall.Close(ethSocketConn.Fd)
+		syscall.Close(ipSocketConn.Fd)
 
 		time.Sleep(1 * time.Second)
 		os.Exit(0)
