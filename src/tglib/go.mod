@@ -2,7 +2,7 @@ module tglib
 
 go 1.20
 
-replace free5gclib => ../free5gc/lib
+replace free5gclib => ../free5gclib
 
 require (
 	free5gclib v0.0.0-00010101000000-000000000000

@@ -2,7 +2,7 @@ go 1.20
 
 use (
 	.
-	./src/free5gc/lib/
+	./src/free5gclib/
 	./src/stgutg/
 	./src/tglib/
 )

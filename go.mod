@@ -3,7 +3,7 @@ module stgutgmain
 go 1.20
 
 replace (
-	free5gc/lib => ./src/free5gc/lib
+	free5gclib => ./src/free5gclib
 	stgutg => ./src/stgutg
 	tglib => ./src/tglib
 )
@@ -14,8 +14,11 @@ require (
 )
 
 require (
+	free5gclib v0.0.0-00010101000000-000000000000 // indirect
+	github.com/aead/cmac v0.0.0-20160719120800-7af84192f0b1 // indirect
 	github.com/antonfisher/nested-logrus-formatter v1.3.1 // indirect
 	github.com/calee0219/fatal v0.0.1 // indirect
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
 	github.com/free5gc/aper v1.0.2 // indirect
 	github.com/free5gc/logger_conf v1.0.0 // indirect
 	github.com/free5gc/logger_util v1.0.0 // indirect
@@ -38,7 +41,6 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
-	github.com/stretchr/testify v1.8.1 // indirect
 	github.com/ugorji/go/codec v1.2.1 // indirect
 	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d // indirect
 	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2 // indirect

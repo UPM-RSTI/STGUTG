@@ -3,7 +3,7 @@ module stgutgp
 go 1.20
 
 replace (
-	free5gclib => ../free5gc/lib
+	free5gclib => ../free5gclib
 	tglib => ../tglib
 )
 
