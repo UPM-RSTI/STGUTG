@@ -33,7 +33,6 @@ import (
 	"tglib"
 
 	"bytes"
-	"encoding/hex"
 	"syscall"
 )
 
@@ -47,12 +46,9 @@ type Thread struct {
 // tunnel, then checks the destination IP and looks up the corresponding MAC address
 // in the system ARP table. It then builds the Eth header and sends the packet back to
 // the client.
-func ListenForResponses(ethSocketConn tglib.EthSocketConn, upfFD int, ctx context.Context, wg *sync.WaitGroup) {
+func ListenForResponses(ipSocketConn tglib.IPSocketConn, upfFD int, ctx context.Context, wg *sync.WaitGroup) {
 
 	defer wg.Done()
-
-	// TODO: this should be a configuration parameter?
-	table := GetARPTable("/proc/net/arp")
 
 	rcvBuf := make([]byte, 1500)
 
@@ -80,17 +76,17 @@ func ListenForResponses(ethSocketConn tglib.EthSocketConn, upfFD int, ctx contex
 		} else if enc_b[0]&3 != 0 {
 			gtp_hdr_size += 4
 		}
-		enc_b = enc_b[gtp_hdr_size:]
+		ipPkt := enc_b[gtp_hdr_size:]
 		ManageError("Error capturing receiving traffic", err)
 
-		// TODO: This will fail if no ARP table entry has been previously added
-		// for the IP in enc_b.
-		eth_dst, err := hex.DecodeString(GetMAC(GetIP(enc_b), table))
-		ManageError("Error retrieving Dst MAC address", err)
+		var ipAddr [4]byte
+		copy(ipAddr[:], ipPkt[16:])
 
-		frame := bytes.Join([][]byte{eth_dst, []byte(ethSocketConn.Iface.HardwareAddr), []byte("\x08\x00"), enc_b}, nil)
+		addr := syscall.SockaddrInet4{
+			Addr: ipAddr,
+		}
 
-		err = syscall.Sendto(ethSocketConn.Fd, frame, 0, &(ethSocketConn.Addr))
+		err = syscall.Sendto(ipSocketConn.Fd, ipPkt, 0, &addr)
 		ManageError("Sendto", err)
 
 	}
