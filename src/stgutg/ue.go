@@ -7,12 +7,12 @@ package stgutg
 // Date: 9/6/21
 
 import (
-	"free5gc/lib/nas"
-	"free5gc/lib/nas/nasMessage"
-	"free5gc/lib/nas/nasTestpacket"
-	"free5gc/lib/nas/security"
-	"free5gc/lib/ngap"
-	"free5gc/lib/ngap/ngapType"
+	"free5gclib/nas"
+	"free5gclib/nas/nasMessage"
+	"free5gclib/nas/nasTestpacket"
+	"free5gclib/nas/security"
+	"free5gclib/ngap"
+	"free5gclib/ngap/ngapType"
 
 	"strconv"
 	"strings"

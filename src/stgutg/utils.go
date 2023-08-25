@@ -6,27 +6,26 @@ package stgutg
 // Date: 9/6/21
 
 import (
-	"free5gc/lib/nas/nasMessage"
-	"free5gc/lib/nas/nasType"
+	"free5gclib/nas/nasMessage"
+	"free5gclib/nas/nasType"
+	"syscall"
+
 	"gopkg.in/yaml.v2"
 
 	"bufio"
 	"fmt"
 	"io/ioutil"
-	"net"
 	"os"
 	"strings"
 )
 
 type Conf struct {
 	Configuration struct {
-		Free5gc_version           string `yaml:"free5gc_version"`
 		Amf_ngap                  string `yaml:"amf_ngap"`
 		Amf_port                  int    `yaml:"amf_port"`
 		Gnb_gtp                   string `yaml:"gnb_gtp"`
 		Gnbg_port                 int    `yaml:"gnbg_port"`
 		Gnb_ngap                  string `yaml:"gnb_ngap"`
-		Upf_gtp                   string `yaml:"upf_gtp"`
 		Gnbn_port                 int    `yaml:"gnbn_port"`
 		Upf_port                  int    `yaml:"upf_port"`
 		Gnb_id                    string `yaml:"gnb_id"`
@@ -40,9 +39,6 @@ type Conf struct {
 		SST                       int32  `yaml:"sst"`
 		SD                        string `yaml:"sd"`
 		SrcIface                  string `yaml:"src_iface"`
-		DstIface                  string `yaml:"dst_iface"`
-		EthSrc                    string `yaml:"eth_src"`
-		EthDst                    string `yaml:"eth_dst"`
 		UeNumber                  int    `yaml:"ue_number"`
 		Test_ue_registation       int    `yaml:"ue_registration"`
 		Test_ue_pdu_establishment int    `yaml:"ue_pdu"`
@@ -52,11 +48,11 @@ type Conf struct {
 	}
 }
 
-// Ipteid
+// TeidUpfIp
 // Structure to store tuples of IP addresses and TEIDs.
-type Ipteid struct {
-	ueip net.IP
-	teid uint32
+type TeidUpfIp struct {
+	teid    uint32
+	upfAddr *syscall.SockaddrInet4
 }
 
 func (c *Conf) GetConfiguration() Conf {
@@ -189,21 +185,6 @@ func GetIP(ip_buffer []byte) string {
 		ip = ip + "." + fmt.Sprintf("%d", ip_buffer[i])
 	}
 	return ip
-}
-
-// GetTEID
-// Function that returns the corresponding TEID for a given IP address, looking
-// for it in the list of current PDU sessions.
-func GetTEID(ip net.IP, ipteids []Ipteid) uint32 {
-
-	for _, ipteid := range ipteids {
-
-		if ip.Equal(ipteid.ueip) {
-			return ipteid.teid
-		}
-
-	}
-	return 0
 }
 
 func Min(x, y int) int {

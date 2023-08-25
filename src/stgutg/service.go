@@ -6,10 +6,10 @@ package stgutg
 // Date: 9/6/21
 
 import (
-	"free5gc/lib/nas"
-	"free5gc/lib/nas/nasMessage"
-	"free5gc/lib/nas/nasTestpacket"
-	"free5gc/lib/ngap"
+	"free5gclib/nas"
+	"free5gclib/nas/nasMessage"
+	"free5gclib/nas/nasTestpacket"
+	"free5gclib/ngap"
 	"tglib"
 
 	"strconv"
@@ -30,31 +30,31 @@ func ServiceRequest(pdu []byte, ue *tglib.RanUeContext, conn *sctp.SCTPConn, gnb
 	pduId := int64(supiInt % 1e4)
 
 	/*
-	  pduSessionIDList := []int64{pduId}
-		sendMsg,err := tglib.GetUEContextReleaseRequest(ue.AmfUeNgapId,
-	                                                  ue.RanUeNgapId,
-	                                                  pduSessionIDList)
-	  ManageError("Error in service Request",err)
+		  pduSessionIDList := []int64{pduId}
+			sendMsg,err := tglib.GetUEContextReleaseRequest(ue.AmfUeNgapId,
+		                                                  ue.RanUeNgapId,
+		                                                  pduSessionIDList)
+		  ManageError("Error in service Request",err)
 
-		_, err = conn.Write(sendMsg)
-	  ManageError("Error in service Request",err)
+			_, err = conn.Write(sendMsg)
+		  ManageError("Error in service Request",err)
 
-	  n, err := conn.Read(recvMsg)
-	  ManageError("Error in service Request",err)
+		  n, err := conn.Read(recvMsg)
+		  ManageError("Error in service Request",err)
 
-	  _, err = ngap.Decoder(recvMsg[:n])
-	  ManageError("Error in service Request",err)
+		  _, err = ngap.Decoder(recvMsg[:n])
+		  ManageError("Error in service Request",err)
 
-	  sendMsg, err = tglib.GetUEContextReleaseComplete(ue.AmfUeNgapId,
-	                                                   ue.RanUeNgapId,
-	                                                   nil)
-	  ManageError("Error in service Request",err)
+		  sendMsg, err = tglib.GetUEContextReleaseComplete(ue.AmfUeNgapId,
+		                                                   ue.RanUeNgapId,
+		                                                   nil)
+		  ManageError("Error in service Request",err)
 
-		_, err = conn.Write(sendMsg)
-	  ManageError("Error in service Request",err)
+			_, err = conn.Write(sendMsg)
+		  ManageError("Error in service Request",err)
 
 
-	  time.Sleep(1 * time.Second)
+		  time.Sleep(1 * time.Second)
 	*/
 
 	pdu = nasTestpacket.GetServiceRequest(nasMessage.ServiceTypeData)

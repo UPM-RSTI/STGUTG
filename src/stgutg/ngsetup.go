@@ -6,7 +6,7 @@ package stgutg
 // Date: 9/6/21
 
 import (
-	"free5gc/lib/ngap"
+	"free5gclib/ngap"
 
 	"tglib"
 

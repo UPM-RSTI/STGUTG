@@ -2,8 +2,8 @@ package tglib
 
 import (
 	"fmt"
-	"free5gc/lib/nas"
-	"free5gc/lib/nas/security"
+	"free5gclib/nas"
+	"free5gclib/nas/security"
 	"reflect"
 )
 

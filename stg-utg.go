@@ -1,9 +1,16 @@
 package main
 
+// #cgo CFLAGS: -pthread
+// #include <signal.h>
+// #include <pthread.h>
+import "C"
+
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -15,7 +22,7 @@ func main() {
 
 	var ueList []*tglib.RanUeContext
 	var pduList [][]byte
-	var ipteids []stgutg.Ipteid
+	teidUpfIPs := make(map[[4]byte]stgutg.TeidUpfIp)
 
 	var c stgutg.Conf
 	c.GetConfiguration()
@@ -30,7 +37,7 @@ func main() {
 		conn, err := tglib.ConnectToAmf(c.Configuration.Amf_ngap,
 			c.Configuration.Gnb_ngap,
 			c.Configuration.Amf_port,
-			c.Configuration.Gnbg_port)
+			c.Configuration.Gnbn_port)
 		stgutg.ManageError("Error in connection to AMF", err)
 
 		fmt.Println(">> Managing NG Setup")
@@ -62,73 +69,92 @@ func main() {
 		i := 0
 		for _, pdu := range pduList {
 			fmt.Println(">> Establishing PDU session for", ueList[i].Supi)
-			ipteid := stgutg.EstablishPDU(c.Configuration.SST,
+
+			// PDU info stored in teidUpfIPs
+			stgutg.EstablishPDU(c.Configuration.SST,
 				c.Configuration.SD,
 				pdu,
 				ueList[i],
 				conn,
 				c.Configuration.Gnb_gtp,
-				c.Configuration.Free5gc_version)
+				c.Configuration.Upf_port,
+				teidUpfIPs)
 
-			ipteids = append(ipteids, ipteid)
 			i++
 			time.Sleep(1 * time.Second)
 		}
 
-		fmt.Println(ipteids)
+		fmt.Println(teidUpfIPs)
 
 		fmt.Println(">> Connecting to UPF")
-		upfConn, err := tglib.ConnectToUpf(c.Configuration.Gnb_gtp,
-			c.Configuration.Upf_gtp,
-			c.Configuration.Gnbn_port,
-			c.Configuration.Upf_port)
+		upfFD, err := tglib.ConnectToUpf(c.Configuration.Gnbg_port)
 		stgutg.ManageError("Error in connection to UPF", err)
 
 		fmt.Println(">> Opening traffic interfaces")
 		ethSocketConn, err := tglib.NewEthSocketConn(c.Configuration.SrcIface)
 		stgutg.ManageError("Error creating Ethernet socket", err)
 
+		ipSocketConn, err := tglib.NewIPSocketConn()
+		stgutg.ManageError("Error creating IP socket", err)
+
 		var stopProgram = make(chan os.Signal)
 		signal.Notify(stopProgram, syscall.SIGTERM)
 		signal.Notify(stopProgram, syscall.SIGINT)
 
-		go func() {
-			sig := <-stopProgram
-			fmt.Println("\n>> Exiting program:", sig, "found")
+		ctx, cancelFunc := context.WithCancel(context.Background())
+		wg := &sync.WaitGroup{}
+		utg_ul_thread_chan := make(chan stgutg.Thread)
 
-			for _, ue := range ueList {
-				fmt.Println(">> Releasing PDU session for", ue.Supi)
-				stgutg.ReleasePDU(c.Configuration.SST,
-					c.Configuration.SD,
-					ue,
-					conn)
-				time.Sleep(1 * time.Second)
-			}
-
-			for _, ue := range ueList {
-				fmt.Println(">> Deregistering UE", ue.Supi)
-				stgutg.DeregisterUE(ue,
-					c.Configuration.Mnc,
-					conn)
-				time.Sleep(2 * time.Second)
-			}
-
-			time.Sleep(1 * time.Second)
-			conn.Close()
-			upfConn.Close()
-
-			time.Sleep(1 * time.Second)
-			os.Exit(0)
-		}()
+		wg.Add(2)
 
 		fmt.Println(">> Listening to traffic responses")
-		go stgutg.ListenForResponses(ethSocketConn,
-			upfConn)
+		go stgutg.ListenForResponses(ipSocketConn, upfFD, ctx, wg)
 
 		fmt.Println(">> Waiting for traffic to send (Press Ctrl+C to quit)")
-		stgutg.SendTraffic(upfConn, ethSocketConn, ipteids)
+		go stgutg.SendTraffic(upfFD, ethSocketConn, teidUpfIPs, ctx, wg, utg_ul_thread_chan)
 
-		time.Sleep(2 * time.Second)
+		utg_ul_thread := <-utg_ul_thread_chan
+
+		// Program interrupted
+		sig := <-stopProgram
+		fmt.Println("\n>> Exiting program:", sig, "found")
+
+		cancelFunc() // Call for UTG to shut down
+
+		// Stop packet capture for both interfaces of UTG
+		C.pthread_kill(C.ulong(utg_ul_thread.Id), C.SIGUSR1)
+		syscall.Shutdown(upfFD, syscall.SHUT_RD)
+
+		for _, ue := range ueList {
+			fmt.Println(">> Releasing PDU session for", ue.Supi)
+			stgutg.ReleasePDU(c.Configuration.SST,
+				c.Configuration.SD,
+				ue,
+				conn)
+			time.Sleep(1 * time.Second)
+		}
+
+		for _, ue := range ueList {
+			fmt.Println(">> Deregistering UE", ue.Supi)
+			stgutg.DeregisterUE(ue,
+				c.Configuration.Mnc,
+				conn)
+			time.Sleep(2 * time.Second)
+		}
+
+		time.Sleep(1 * time.Second)
+		conn.Close()
+
+		fmt.Println(">> Waiting for UTG to shut down")
+		wg.Wait() // Wait for UTG to shut down, then close interfaces
+
+		fmt.Println(">> Closing network interfaces")
+		syscall.Close(upfFD)
+		syscall.Close(ethSocketConn.Fd)
+		syscall.Close(ipSocketConn.Fd)
+
+		time.Sleep(1 * time.Second)
+		os.Exit(0)
 
 	} else if mode == 2 {
 		fmt.Println("TEST MODE")
@@ -158,7 +184,7 @@ func main() {
 		conn, err := tglib.ConnectToAmf(c.Configuration.Amf_ngap,
 			c.Configuration.Gnb_ngap,
 			c.Configuration.Amf_port,
-			c.Configuration.Gnbg_port)
+			c.Configuration.Gnbn_port)
 		stgutg.ManageError("Error in connection to AMF", err)
 
 		fmt.Println(">> Managing NG Setup")
@@ -193,15 +219,15 @@ func main() {
 			fmt.Println(">> [ PDU ESTABLISHMENT TEST", i+1, "]")
 
 			fmt.Println(">> Establishing PDU session for", ueList[i].Supi)
-			ipteid := stgutg.EstablishPDU(c.Configuration.SST,
+			stgutg.EstablishPDU(c.Configuration.SST,
 				c.Configuration.SD,
 				pduList[i],
 				ueList[i],
 				conn,
 				c.Configuration.Gnb_gtp,
-				c.Configuration.Free5gc_version)
+				c.Configuration.Upf_port,
+				teidUpfIPs)
 
-			ipteids = append(ipteids, ipteid)
 			time.Sleep(1 * time.Second)
 		}
 
