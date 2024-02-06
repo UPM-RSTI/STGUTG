@@ -1,13 +1,13 @@
 package tglib
 
 import (
-	"free5gc/lib/nas"
-	"free5gc/lib/nas/nasMessage"
+	"free5gclib/nas"
+	"free5gclib/nas/nasMessage"
 
-	// Nausf_UEAU_Client "free5gc/lib/openapi/Nausf_UEAuthentication"
-	"free5gc/lib/ngap"
+	// Nausf_UEAU_Client "free5gclib/openapi/Nausf_UEAuthentication"
+	"free5gclib/ngap"
 	"tglib/ngapTestpacket"
-	// "free5gc/lib/openapi/models"
+	// "free5gclib/openapi/models"
 )
 
 func GetNGSetupRequest(gnbId []byte, bitlength uint64, name string) ([]byte, error) {
@@ -41,7 +41,7 @@ func GetInitialContextSetupResponse(amfUeNgapID int64, ranUeNgapID int64) ([]byt
 }
 
 func GetInitialContextSetupResponseForServiceRequest(
-	amfUeNgapID int64, ranUeNgapID int64, pduId int64,  ipv4 string) ([]byte, error) {
+	amfUeNgapID int64, ranUeNgapID int64, pduId int64, ipv4 string) ([]byte, error) {
 	message := ngapTestpacket.BuildInitialContextSetupResponse(amfUeNgapID, ranUeNgapID, pduId, ipv4, nil)
 	return ngap.Encoder(message)
 }

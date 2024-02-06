@@ -2,14 +2,14 @@ package tglib
 
 import (
 	"encoding/hex"
-	"free5gc/lib/CommonConsumerTestData/UDM/TestGenAuthData"
-	"free5gc/lib/CommonConsumerTestData/UDR/TestRegistrationProcedure"
-	"free5gc/lib/UeauCommon"
-	"free5gc/lib/milenage"
-	"free5gc/lib/nas/nasMessage"
-	"free5gc/lib/nas/nasType"
-	"free5gc/lib/nas/security"
-	"free5gc/lib/openapi/models"
+	"free5gclib/CommonConsumerTestData/UDM/TestGenAuthData"
+	"free5gclib/CommonConsumerTestData/UDR/TestRegistrationProcedure"
+	"free5gclib/UeauCommon"
+	"free5gclib/milenage"
+	"free5gclib/nas/nasMessage"
+	"free5gclib/nas/nasType"
+	"free5gclib/nas/security"
+	"free5gclib/openapi/models"
 	"regexp"
 
 	"github.com/calee0219/fatal"

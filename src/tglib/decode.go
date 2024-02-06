@@ -1,8 +1,8 @@
 package tglib
 
 import (
-	"free5gc/lib/nas"
-	"free5gc/lib/ngap/ngapType"
+	"free5gclib/nas"
+	"free5gclib/ngap/ngapType"
 )
 
 func GetNasPdu(ue *RanUeContext, msg *ngapType.DownlinkNASTransport) (m *nas.Message) {

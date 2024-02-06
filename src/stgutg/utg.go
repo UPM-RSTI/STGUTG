@@ -9,18 +9,36 @@ package stgutg
 // Version: 0.9
 // Date: 9/6/21
 
+// #cgo CFLAGS: -pthread
+// #include <signal.h>
+// #include <pthread.h>
+// #include <string.h>
+//
+//
+// void handler(int sig) {}
+//
+// void setsigaction() {
+// 	struct sigaction act;
+// 	bzero(&act, sizeof(act));
+// 	act.sa_handler = &handler;
+// 	sigaction(SIGUSR1, &act, NULL);
+// }
+import "C"
+
 import (
-  "tglib"
+	"context"
+	"fmt"
+	"runtime"
+	"sync"
+	"tglib"
 
-  "encoding/hex"
-  "net"
-  //"fmt"
-
-  "github.com/ghedo/go.pkt/capture/pcap"
-  "github.com/ghedo/go.pkt/layers"
-  "github.com/ghedo/go.pkt/filter"
-  "github.com/ghedo/go.pkt/packet"
+	"bytes"
+	"syscall"
 )
+
+type Thread struct {
+	Id C.ulong
+}
 
 // ListenForResponses
 // Function that keeps listening in the network interface connected to the UPF (dst)
@@ -28,38 +46,49 @@ import (
 // tunnel, then checks the destination IP and looks up the corresponding MAC address
 // in the system ARP table. It then builds the Eth header and sends the packet back to
 // the client.
-func ListenForResponses (src *pcap.Handle, dst *pcap.Handle, srcMac string, gnb_gtp string){
+func ListenForResponses(ipSocketConn tglib.IPSocketConn, upfFD int, ctx context.Context, wg *sync.WaitGroup) {
 
-	f,err := filter.Compile("not arp and dst "+gnb_gtp,packet.Eth,true)
-  ManageError("Error capturing receiving traffic",err)
+	defer wg.Done()
 
-   // TODO: this should be a configuration parameter?
-  table := GetARPTable("/proc/net/arp")
+	rcvBuf := make([]byte, 1500)
 
-	dst.Activate()
 	for {
 
-  		buf,err := dst.Capture()
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
 
-      ManageError("Error capturing receiving traffic",err)
+		udpPayloadSize, _, err := syscall.Recvfrom(upfFD, rcvBuf, 0)
+		if err != nil {
+			fmt.Printf("Error reading udp socket: %s\n", err)
+			continue
+		} else if udpPayloadSize == 0 {
+			continue
+		}
 
-  		if f.Match(buf) {
+		enc_b := rcvBuf[:udpPayloadSize]
 
-  			p,err := layers.UnpackAll(buf,packet.Eth)
-        ManageError("Error capturing receiving traffic",err)
-  			ip_p := p.Payload()
-  			udp_p := ip_p.Payload()
-  			tgp_p := udp_p.Payload()
-  			enc_b,err := layers.Pack(tgp_p)
-        ManageError("Error capturing receiving traffic",err)
+		gtp_hdr_size := 8
+		if enc_b[0]&4 != 0 {
+			gtp_hdr_size += 4 + int(enc_b[12])*4
+		} else if enc_b[0]&3 != 0 {
+			gtp_hdr_size += 4
+		}
+		ipPkt := enc_b[gtp_hdr_size:]
+		ManageError("Error capturing receiving traffic", err)
 
-        // TODO: This will fail if no ARP table entry has been previously added
-        // for the IP in enc_b.
-        eth_hdr,err := hex.DecodeString(GetMAC(GetIP(enc_b),table)+srcMac+"0800")
-        ManageError("Error capturing receiving traffic",err)
+		var ipAddr [4]byte
+		copy(ipAddr[:], ipPkt[16:])
 
-  			src.Inject(append(eth_hdr,enc_b[8:]...))
-  		}
+		addr := syscall.SockaddrInet4{
+			Addr: ipAddr,
+		}
+
+		err = syscall.Sendto(ipSocketConn.Fd, ipPkt, 0, &addr)
+		ManageError("Sendto", err)
+
 	}
 }
 
@@ -68,34 +97,50 @@ func ListenForResponses (src *pcap.Handle, dst *pcap.Handle, srcMac string, gnb_
 // generate the user traffic (src), emulating the UEs.
 // It checks the source IP address to determine the TEID to use when adding the GTP
 // header and then sends the traffic to the UPF.
-func SendTraffic (upfConn *net.UDPConn,src *pcap.Handle, teids []Ipteid) {
+func SendTraffic(upfFD int, ethSocketConn tglib.EthSocketConn, teidUpfIPs map[[4]byte]TeidUpfIp, ctx context.Context, wg *sync.WaitGroup, thread_id_chan chan Thread) {
+	runtime.LockOSThread() // Force this goroutine to always run on the same OS thread (Maybe not needed)
 
-  f,_ := filter.Compile("not arp",packet.Eth,true)
+	defer wg.Done()
 
-  i:=0
-  for {
-		buf,err := src.Capture()
-    ManageError("Error capturing and sending traffic",err)
+	thread_id_chan <- Thread{Id: C.pthread_self()}
 
-		if f.Match(buf) {
+	C.setsigaction()
 
+	data := make([]byte, 1500)
 
-      p,err := layers.UnpackAll(buf,packet.Eth)
-      ManageError("Error capturing and sending traffic",err)
-      ip_p := p.Payload()
-      enc_ipp, err := layers.Pack(ip_p)
-      ManageError("Error capturing and sending traffic",err)
-      src_ip := net.IP(enc_ipp[12:16])
-      //fmt.Println(src_ip)
-      teid := GetTEID(src_ip, teids)
+	for {
 
-			gtpHdr,err := tglib.BuildGTPv1Header(false, 0, false, 0, false, 0, uint16(len(buf[14:])), teid)
-      ManageError("Error capturing and sending traffic",err)
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
 
-      _, err = upfConn.Write(append(gtpHdr,buf[14:]...))
-      ManageError("Error capturing and sending traffic",err)
+		frameSize, err := syscall.Read(ethSocketConn.Fd, data)
+		if err != nil {
+			if err != syscall.EINTR {
+				fmt.Printf("Error receiving traffic: %s\n", err)
+			}
+			continue
+		}
 
-      i++
+		if bytes.Equal(data[0:6], []byte(ethSocketConn.Iface.HardwareAddr)) && bytes.Equal(data[12:14], []byte{8, 0}) {
+
+			ethFrame := data[:frameSize]
+
+			//fmt.Println(ethFrame)
+
+			src_ip := ethFrame[14+12 : 14+16]
+
+			//fmt.Println(src_ip)
+			teid := teidUpfIPs[([4]byte)(src_ip)].teid
+
+			gtpHdr, err := tglib.BuildGTPv1Header(false, 0, false, 0, false, 0, uint16(len(ethFrame[14:])), teid)
+			ManageError("Error capturing and sending traffic", err)
+
+			err = syscall.Sendto(upfFD, append(gtpHdr, ethFrame[14:]...), 0, teidUpfIPs[([4]byte)(src_ip)].upfAddr)
+			ManageError("Error capturing and sending traffic", err)
+
 		}
 	}
 }
