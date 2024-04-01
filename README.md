@@ -1,5 +1,5 @@
 
-![](stgutg.png) 
+![](5gtc.png) 
 
 # 5G Traffic Connector
 
