@@ -7,7 +7,7 @@ package stgutg
 // Date: 9/6/21
 
 import (
-	"syscall"
+	"net"
 
 	"github.com/free5gc/nas"
 	"github.com/free5gc/nas/nasMessage"
@@ -58,7 +58,7 @@ var PDUSessionEstablishmentAcceptOptionalElementsHalfByte = []byte{
 // Function that establishes a new PDU session for a given UE.
 // It requres a previously generated UE and an active SCTP connection with an AMF.
 // It returns a tuple of assigned IP for the UE and the corresponding TEID.
-func EstablishPDU(sst int32, sd string, pdu []byte, ue *tglib.RanUeContext, conn *sctp.SCTPConn, gnb_gtp string, upf_port int, teidUpfIPs map[[4]byte]TeidUpfIp) {
+func EstablishPDU(sst int32, sd string, pdu []byte, ue *tglib.RanUeContext, conn *sctp.SCTPConn, gnb_gtp string, upf_port int) (net.IP, uint32, net.IP) {
 
 	var recvMsg = make([]byte, 2048)
 	sNssai := models.Snssai{
@@ -100,13 +100,8 @@ func EstablishPDU(sst int32, sd string, pdu []byte, ue *tglib.RanUeContext, conn
 
 	PDUSessionResourceSetupItemSUReq := msg.InitiatingMessage.Value.PDUSessionResourceSetupRequest.ProtocolIEs.List[2].Value.PDUSessionResourceSetupListSUReq.List[0]
 
-	bip := DecodePDUSessionNASPDU(PDUSessionResourceSetupItemSUReq.PDUSessionNASPDU.Value)
-	bteid, bupfip := DecodePDUSessionResourceSetupRequestTransfer(PDUSessionResourceSetupItemSUReq.PDUSessionResourceSetupRequestTransfer)
-
-	teid := binary.BigEndian.Uint32(bteid)
-	upfAddr := syscall.SockaddrInet4{Addr: ([4]byte)(bupfip), Port: upf_port}
-
-	teidUpfIPs[bip] = TeidUpfIp{teid, &upfAddr}
+	clientip := DecodePDUSessionNASPDU(PDUSessionResourceSetupItemSUReq.PDUSessionNASPDU.Value)
+	teid, upfip := DecodePDUSessionResourceSetupRequestTransfer(PDUSessionResourceSetupItemSUReq.PDUSessionResourceSetupRequestTransfer)
 
 	sendMsg, err = tglib.GetPDUSessionResourceSetupResponse(ue.AmfUeNgapId,
 		ue.RanUeNgapId,
@@ -116,6 +111,8 @@ func EstablishPDU(sst int32, sd string, pdu []byte, ue *tglib.RanUeContext, conn
 
 	_, err = conn.Write(sendMsg)
 	ManageError("Error establishing PDU", err)
+
+	return clientip, teid, upfip
 }
 
 // ReleasePDU
@@ -231,9 +228,9 @@ func ModifyPDU(sst int32, sd string, ue *tglib.RanUeContext, conn *sctp.SCTPConn
 
 // DecodePDUSessionResourceSetupRequestTransfer
 // Function that extracts UPF IP address and TEID from a given PDUSessionResourceSetupRequestTransfer
-func DecodePDUSessionResourceSetupRequestTransfer(PDUSessionResourceSetupRequestTransfer []byte) ([]byte, []byte) {
-	var bteid []byte = nil
-	var bupfip []byte = nil
+func DecodePDUSessionResourceSetupRequestTransfer(PDUSessionResourceSetupRequestTransfer []byte) (uint32, net.IP) {
+	var teid uint32
+	var upfip net.IP
 
 	offset := 3 //  We skip number of protocolIEs as we are only interested in the first or second one
 
@@ -249,20 +246,20 @@ func DecodePDUSessionResourceSetupRequestTransfer(PDUSessionResourceSetupRequest
 
 			UPTransportLayerInfo := PDUSessionResourceSetupRequestTransfer[offset : offset+UPTrasportLayerInfoLength]
 
-			bteid = UPTransportLayerInfo[UPTrasportLayerInfoLength-4:]
-			bupfip = UPTransportLayerInfo[UPTrasportLayerInfoLength-8 : UPTrasportLayerInfoLength-4]
+			teid = binary.BigEndian.Uint32(UPTransportLayerInfo[UPTrasportLayerInfoLength-4:])
+			upfip = net.IP(UPTransportLayerInfo[UPTrasportLayerInfoLength-8 : UPTrasportLayerInfoLength-4])
 
 			break
 		}
 	}
 
-	return bteid, bupfip
+	return teid, upfip
 }
 
 // DecodePDUSessionNASPDU
 // Function that extracts UE IP address from a given PDUSessionNASPDU message
-func DecodePDUSessionNASPDU(PDUSessionNASPDU []byte) [4]byte {
-	var bip [4]byte
+func DecodePDUSessionNASPDU(PDUSessionNASPDU []byte) net.IP {
+	var bip net.IP
 
 	plainNAS5GSMessage := PDUSessionNASPDU[7:]
 
@@ -283,7 +280,7 @@ outerloop:
 		opElementID = opElements[index]
 
 		if opElementID == 0x29 { // PDU Address
-			bip = ([4]byte)(opElements[index+3 : index+7])
+			bip = (net.IP)(opElements[index+3 : index+7])
 			index += 7
 			break outerloop
 		}
@@ -309,11 +306,4 @@ outerloop:
 	}
 
 	return bip
-}
-
-func printHex(bytearray []byte) {
-	for _, byteelement := range bytearray {
-		fmt.Printf("%02X ", byteelement)
-	}
-	fmt.Print("\n\n")
 }
