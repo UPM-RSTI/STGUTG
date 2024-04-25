@@ -5,7 +5,6 @@ import (
 	"log"
 	"os"
 
-	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 )
 
@@ -53,34 +52,4 @@ func (hook *FileHook) Levels() []logrus.Level {
 		logrus.InfoLevel,
 		logrus.DebugLevel,
 	}
-}
-
-// The Middleware will write the Gin logs to logrus.
-func ginToLogrus(log *logrus.Entry) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		path := c.Request.URL.Path
-		raw := c.Request.URL.RawQuery
-
-		// Process request
-		c.Next()
-
-		clientIP := c.ClientIP()
-		method := c.Request.Method
-		statusCode := c.Writer.Status()
-		errorMessage := c.Errors.ByType(gin.ErrorTypePrivate).String()
-
-		if raw != "" {
-			path = path + "?" + raw
-		}
-
-		log.Infof("| %3d | %15s | %-7s | %s | %s",
-			statusCode, clientIP, method, path, errorMessage)
-	}
-}
-
-// NewGinWithLogrus - returns an Engine instance with the ginToLogrus and Recovery middleware already attached.
-func NewGinWithLogrus(log *logrus.Entry) *gin.Engine {
-	engine := gin.New()
-	engine.Use(ginToLogrus(log), gin.Recovery())
-	return engine
 }
