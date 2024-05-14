@@ -51,6 +51,7 @@ require (
 	github.com/prometheus-community/pro-bing v0.3.0 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/ugorji/go/codec v1.2.1 // indirect
+	github.com/wmnsk/milenage v1.2.1 // indirect
 	golang.org/x/crypto v0.10.0 // indirect
 	golang.org/x/exp v0.0.0-20230224173230-c95f2b4c22f2 // indirect
 	golang.org/x/net v0.11.0 // indirect

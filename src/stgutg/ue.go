@@ -7,6 +7,7 @@ package stgutg
 // Date: 9/6/21
 
 import (
+	"fmt"
 	"free5gclib/nas"
 	"free5gclib/nas/nasMessage"
 	"free5gclib/nas/nasTestpacket"
@@ -26,11 +27,15 @@ import (
 // CreateUE
 // Function that cretes an new UE structure containing an specific SUPI and
 // currently, common security parameters (from the configuration file)
-func CreateUE(imsi int, K string, OPC string, OP string) *tglib.RanUeContext {
+func CreateUE(imsi string, ueNumber int, K string, OPC string, OP string) *tglib.RanUeContext {
 
-	ranUeNgapId := imsi % 1e4
-	supiStr := strconv.Itoa(imsi)
-	supi := "imsi-" + supiStr
+	parsedIMSI, err := strconv.Atoi(imsi)
+	if err != nil {
+		fmt.Println("Error parsing IMSI:", err)
+	}
+
+	ranUeNgapId := (parsedIMSI + ueNumber) % 1e4
+	supi := "imsi-" + imsi
 
 	ue := tglib.NewRanUeContext(supi,
 		int64(ranUeNgapId),
@@ -45,7 +50,7 @@ func CreateUE(imsi int, K string, OPC string, OP string) *tglib.RanUeContext {
 // Function that, given a UE context, allows its registration in the core.
 // The UE information should have been previously stored in the core database
 // (subscriptor information)
-func RegisterUE(ue *tglib.RanUeContext, mnc string, conn *sctp.SCTPConn) (*tglib.RanUeContext, []byte, *ngapType.NGAPPDU) {
+func RegisterUE(ue *tglib.RanUeContext, mnc string, mcc string, conn *sctp.SCTPConn) (*tglib.RanUeContext, []byte, *ngapType.NGAPPDU) {
 	var recvMsg = make([]byte, 2048)
 
 	mobileIdentity5GS := EncodeSuci([]byte(strings.TrimPrefix(ue.Supi, "imsi-")), len(mnc))
@@ -72,13 +77,24 @@ func RegisterUE(ue *tglib.RanUeContext, mnc string, conn *sctp.SCTPConn) (*tglib
 
 	nasPdu := tglib.GetNasPdu(ue,
 		ngapMsg.InitiatingMessage.Value.DownlinkNASTransport)
+
+	autn := nasPdu.AuthenticationRequest.AuthenticationParameterAUTN.GetAUTN()
+
+	var snName string
+	if len(mnc) == 2 {
+		snName = "5G:mnc0" + mnc + ".mcc" + mcc + ".3gppnetwork.org"
+	} else {
+		snName = "5G:mnc" + mnc + ".mcc" + mcc + ".3gppnetwork.org"
+	}
+
 	rand := nasPdu.AuthenticationRequest.GetRANDValue()
 	resStat := ue.DeriveRESstarAndSetKey(ue.AuthenticationSubs,
+		autn,
 		rand[:],
-		"5G:mnc093.mcc208.3gppnetwork.org")
-
+		snName,
+		mnc,
+		mcc)
 	ue.AmfUeNgapId = ngapMsg.InitiatingMessage.Value.DownlinkNASTransport.ProtocolIEs.List[0].Value.AMFUENGAPID.Value
-
 	pdu := nasTestpacket.GetAuthenticationResponse(resStat, "")
 
 	sendMsg, err = tglib.GetUplinkNASTransport(ue.AmfUeNgapId, ue.RanUeNgapId, pdu)
@@ -138,6 +154,10 @@ func RegisterUE(ue *tglib.RanUeContext, mnc string, conn *sctp.SCTPConn) (*tglib
 
 	_, err = conn.Write(sendMsg)
 	ManageError("Error in registering new UE", err)
+
+	n, err = conn.Read(recvMsg)
+	ManageError("Error establishing PDU", err)
+	ngap.Decoder(recvMsg[:n])
 
 	return ue, pdu, ngapPdu
 }

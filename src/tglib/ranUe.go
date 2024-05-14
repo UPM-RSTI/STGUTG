@@ -1,16 +1,18 @@
 package tglib
 
 import (
+	"encoding/binary"
 	"encoding/hex"
 	"free5gclib/CommonConsumerTestData/UDM/TestGenAuthData"
 	"free5gclib/CommonConsumerTestData/UDR/TestRegistrationProcedure"
 	"free5gclib/UeauCommon"
-	"free5gclib/milenage"
 	"free5gclib/nas/nasMessage"
 	"free5gclib/nas/nasType"
 	"free5gclib/nas/security"
 	"free5gclib/openapi/models"
 	"regexp"
+
+	"github.com/wmnsk/milenage"
 
 	"github.com/calee0219/fatal"
 )
@@ -79,12 +81,10 @@ func NewRanUeContext(supi string, ranUeNgapId int64, cipheringAlg, integrityAlg 
 }
 
 func (ue *RanUeContext) DeriveRESstarAndSetKey(
-	authSubs models.AuthenticationSubscription, rand []byte, snName string) []byte {
+	authSubs models.AuthenticationSubscription, autn [16]uint8, rand []byte, snName string, mnc string, mcc string) []byte {
 
-	sqn, err := hex.DecodeString(authSubs.SequenceNumber)
-	if err != nil {
-		fatal.Fatalf("DecodeString error: %+v", err)
-	}
+	sqn := make([]byte, 8)
+	copy(sqn[2:], autn[0:6])
 
 	amf, err := hex.DecodeString(authSubs.AuthenticationManagementField)
 	if err != nil {
@@ -92,18 +92,13 @@ func (ue *RanUeContext) DeriveRESstarAndSetKey(
 	}
 
 	// Run milenage
-	macA, macS := make([]byte, 8), make([]byte, 8)
-	ck, ik := make([]byte, 16), make([]byte, 16)
-	res := make([]byte, 8)
-	ak, akStar := make([]byte, 6), make([]byte, 6)
-
 	opc := make([]byte, 16)
 	_ = opc
 	k, err := hex.DecodeString(authSubs.PermanentKey.PermanentKeyValue)
 	if err != nil {
 		fatal.Fatalf("DecodeString error: %+v", err)
 	}
-
+	var mil *milenage.Milenage
 	if authSubs.Opc.OpcValue == "" {
 		opStr := authSubs.Milenage.Op.OpValue
 		var op []byte
@@ -112,53 +107,49 @@ func (ue *RanUeContext) DeriveRESstarAndSetKey(
 			fatal.Fatalf("DecodeString error: %+v", err)
 		}
 
-		opc, err = milenage.GenerateOPC(k, op)
-		if err != nil {
-			fatal.Fatalf("milenage GenerateOPC error: %+v", err)
-		}
+		mil = milenage.New(k, op, rand, binary.LittleEndian.Uint64(sqn), binary.LittleEndian.Uint16(amf))
 	} else {
 		opc, err = hex.DecodeString(authSubs.Opc.OpcValue)
 		if err != nil {
 			fatal.Fatalf("DecodeString error: %+v", err)
 		}
+
+		mil = milenage.NewWithOPc(k, opc, rand, binary.LittleEndian.Uint64(sqn), binary.LittleEndian.Uint16(amf))
 	}
 
 	// Generate MAC_A, MAC_S
-	err = milenage.F1(opc, k, rand, sqn, amf, macA, macS)
+	mil.F1()
+	mil.F1Star(sqn, amf)
+
+	// Generate CK, IK, AK
+	_, ck, ik, ak, err := mil.F2345()
 	if err != nil {
-		fatal.Fatalf("regexp Compile error: %+v", err)
+		fatal.Fatalf("ComputeRES error: %+v", err)
 	}
 
-	// Generate RES, CK, IK, AK, AKstar
-	err = milenage.F2345(opc, k, rand, res, ck, ik, ak, akStar)
-	if err != nil {
-		fatal.Fatalf("regexp Compile error: %+v", err)
-	}
-
-	// derive RES*
 	key := append(ck, ik...)
-	FC := UeauCommon.FC_FOR_RES_STAR_XRES_STAR_DERIVATION
-	P0 := []byte(snName)
-	P1 := rand
-	P2 := res
 
-	ue.DerivateKamf(key, snName, sqn, ak)
+	ue.DerivateKamf(key, snName, autn[0:6], ak)
 	ue.DerivateAlgKey()
-	kdfVal_for_resStar :=
-		UeauCommon.GetKDFValue(key, FC, P0, UeauCommon.KDFLen(P0), P1, UeauCommon.KDFLen(P1), P2, UeauCommon.KDFLen(P2))
-	return kdfVal_for_resStar[len(kdfVal_for_resStar)/2:]
 
+	resStar, err := mil.ComputeRESStar(mcc, mnc)
+	if err != nil {
+		fatal.Fatalf("ComputeRES error: %+v", err)
+	}
+
+	return resStar
 }
 
 func (ue *RanUeContext) DerivateKamf(key []byte, snName string, SQN, AK []byte) {
 
 	FC := UeauCommon.FC_FOR_KAUSF_DERIVATION
 	P0 := []byte(snName)
-	SQNxorAK := make([]byte, 6)
-	for i := 0; i < len(SQN); i++ {
-		SQNxorAK[i] = SQN[i] ^ AK[i]
-	}
-	P1 := SQNxorAK
+	// SQNxorAK := make([]byte, 6)
+	// for i := 0; i < len(SQN); i++ {
+	// 	SQNxorAK[i] = SQN[i] ^ AK[i]
+	// }
+	// P1 := SQNxorAK
+	P1 := SQN
 	Kausf := UeauCommon.GetKDFValue(key, FC, P0, UeauCommon.KDFLen(P0), P1, UeauCommon.KDFLen(P1))
 	P0 = []byte(snName)
 	Kseaf := UeauCommon.GetKDFValue(Kausf, UeauCommon.FC_FOR_KSEAF_DERIVATION, P0, UeauCommon.KDFLen(P0))

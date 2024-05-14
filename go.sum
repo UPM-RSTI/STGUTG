@@ -230,6 +230,8 @@ github.com/ugorji/go/codec v1.1.7/go.mod h1:Ax+UKWsSmolVDwsd+7N3ZtXu+yMGCf907BLY
 github.com/ugorji/go/codec v1.2.0/go.mod h1:dXvG35r7zTX6QImXOSFhGMmKtX+wJ7VTWzGvYQGIjBs=
 github.com/ugorji/go/codec v1.2.1 h1:/TRfW3XKkvWvmAYyCUaQlhoCDGjcvNR8xVVA/l5p/jQ=
 github.com/ugorji/go/codec v1.2.1/go.mod h1:s/WxCRi46t8rA+fowL40EnmD7ec0XhR7ZypxeBNdzsM=
+github.com/wmnsk/milenage v1.2.1 h1:AmU3cp4+/pF32B77U3ipV29ZHf1gXG3twonITrIqUT8=
+github.com/wmnsk/milenage v1.2.1/go.mod h1:0u7HPh1BsNXPRnpWSCuaYkL3QB8c0Ihh2qSn1MX4B1c=
 github.com/yuin/goldmark v1.1.25/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.32/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=

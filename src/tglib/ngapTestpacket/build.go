@@ -16,7 +16,9 @@ func init() {
 	TestPlmn.Value = aper.OctetString("\x02\xf8\x39")
 }
 
-func BuildNGSetupRequest() (pdu ngapType.NGAPPDU) {
+func BuildNGSetupRequest(mobilePLMN []uint8) (pdu ngapType.NGAPPDU) {
+
+	TestPlmn.Value = aper.OctetString(mobilePLMN)
 
 	pdu.Present = ngapType.NGAPPDUPresentInitiatingMessage
 	pdu.InitiatingMessage = new(ngapType.InitiatingMessage)
@@ -43,7 +45,7 @@ func BuildNGSetupRequest() (pdu ngapType.NGAPPDU) {
 	globalRANNodeID.GlobalGNBID = new(ngapType.GlobalGNBID)
 
 	globalGNBID := globalRANNodeID.GlobalGNBID
-	globalGNBID.PLMNIdentity.Value = aper.OctetString("\x02\xf8\x39")
+	globalGNBID.PLMNIdentity.Value = TestPlmn.Value
 	globalGNBID.GNBID.Present = ngapType.GNBIDPresentGNBID
 	globalGNBID.GNBID.GNBID = new(aper.BitString)
 
@@ -81,7 +83,7 @@ func BuildNGSetupRequest() (pdu ngapType.NGAPPDU) {
 	broadcastPLMNList := &supportedTAItem.BroadcastPLMNList
 	// BroadcastPLMNItem in BroadcastPLMNList
 	broadcastPLMNItem := ngapType.BroadcastPLMNItem{}
-	broadcastPLMNItem.PLMNIdentity.Value = aper.OctetString("\x02\xf8\x39")
+	broadcastPLMNItem.PLMNIdentity.Value = TestPlmn.Value
 
 	sliceSupportList := &broadcastPLMNItem.TAISliceSupportList
 	// SliceSupportItem in SliceSupportList
@@ -532,13 +534,13 @@ func BuildUEContextReleaseComplete(amfUeNgapID, ranUeNgapID int64, pduSessionIDL
 	userLocationInformation.UserLocationInformationNR = new(ngapType.UserLocationInformationNR)
 
 	userLocationInformationNR := userLocationInformation.UserLocationInformationNR
-	userLocationInformationNR.NRCGI.PLMNIdentity.Value = aper.OctetString("\x02\xf8\x39")
+	userLocationInformationNR.NRCGI.PLMNIdentity.Value = TestPlmn.Value
 	userLocationInformationNR.NRCGI.NRCellIdentity.Value = aper.BitString{
 		Bytes:     []byte{0x00, 0x00, 0x00, 0x00, 0x10},
 		BitLength: 36,
 	}
 
-	userLocationInformationNR.TAI.PLMNIdentity.Value = aper.OctetString("\x02\xf8\x39")
+	userLocationInformationNR.TAI.PLMNIdentity.Value = TestPlmn.Value
 	userLocationInformationNR.TAI.TAC.Value = aper.OctetString("\x00\x00\x11")
 
 	uEContextReleaseCompleteIEs.List = append(uEContextReleaseCompleteIEs.List, ie)
@@ -630,13 +632,13 @@ func BuildUEContextModificationResponse(amfUeNgapID, ranUeNgapID int64) (pdu nga
 	userLocationInfo.UserLocationInformationNR = new(ngapType.UserLocationInformationNR)
 
 	locationNR := userLocationInfo.UserLocationInformationNR
-	locationNR.NRCGI.PLMNIdentity.Value = aper.OctetString("\x02\xf8\x39")
+	locationNR.NRCGI.PLMNIdentity.Value = TestPlmn.Value
 	locationNR.NRCGI.NRCellIdentity.Value = aper.BitString{
 		Bytes:     []byte{0x00, 0x00, 0x00, 0x00, 0x10},
 		BitLength: 36,
 	}
 
-	locationNR.TAI.PLMNIdentity.Value = aper.OctetString("\x02\xf8\x39")
+	locationNR.TAI.PLMNIdentity.Value = TestPlmn.Value
 	locationNR.TAI.TAC.Value = aper.OctetString("\x00\x00\x11")
 
 	locationNR.TimeStamp = new(ngapType.TimeStamp)
@@ -712,13 +714,13 @@ func BuildUplinkNasTransport(amfUeNgapID, ranUeNgapID int64, nasPdu []byte) (pdu
 	userLocationInformation.UserLocationInformationNR = new(ngapType.UserLocationInformationNR)
 
 	userLocationInformationNR := userLocationInformation.UserLocationInformationNR
-	userLocationInformationNR.NRCGI.PLMNIdentity.Value = aper.OctetString("\x02\xf8\x39")
+	userLocationInformationNR.NRCGI.PLMNIdentity.Value = TestPlmn.Value
 	userLocationInformationNR.NRCGI.NRCellIdentity.Value = aper.BitString{
 		Bytes:     []byte{0x00, 0x00, 0x00, 0x00, 0x10},
 		BitLength: 36,
 	}
 
-	userLocationInformationNR.TAI.PLMNIdentity.Value = aper.OctetString("\x02\xf8\x39")
+	userLocationInformationNR.TAI.PLMNIdentity.Value = TestPlmn.Value
 	userLocationInformationNR.TAI.TAC.Value = aper.OctetString("\x00\x00\x01")
 
 	uplinkNasTransportIEs.List = append(uplinkNasTransportIEs.List, ie)
@@ -926,13 +928,13 @@ func BuildPathSwitchRequest(sourceAmfUeNgapID, ranUeNgapID int64) (pdu ngapType.
 	userLocationInformation.UserLocationInformationNR = new(ngapType.UserLocationInformationNR)
 
 	userLocationInformationNR := userLocationInformation.UserLocationInformationNR
-	userLocationInformationNR.NRCGI.PLMNIdentity.Value = aper.OctetString("\x02\xf8\x39")
+	userLocationInformationNR.NRCGI.PLMNIdentity.Value = TestPlmn.Value
 	userLocationInformationNR.NRCGI.NRCellIdentity.Value = aper.BitString{
 		Bytes:     []byte{0x00, 0x00, 0x00, 0x00, 0x20},
 		BitLength: 36,
 	}
 
-	userLocationInformationNR.TAI.PLMNIdentity.Value = aper.OctetString("\x02\xf8\x39")
+	userLocationInformationNR.TAI.PLMNIdentity.Value = TestPlmn.Value
 	userLocationInformationNR.TAI.TAC.Value = aper.OctetString("\x00\x00\x11")
 
 	pathSwitchRequestIEs.List = append(pathSwitchRequestIEs.List, ie)
@@ -1214,13 +1216,13 @@ func BuildPDUSessionResourceReleaseResponse() (pdu ngapType.NGAPPDU) {
 	userLocationInformation.UserLocationInformationNR = new(ngapType.UserLocationInformationNR)
 
 	userLocationInformationNR := userLocationInformation.UserLocationInformationNR
-	userLocationInformationNR.NRCGI.PLMNIdentity.Value = aper.OctetString("\x02\xf8\x39")
+	userLocationInformationNR.NRCGI.PLMNIdentity.Value = TestPlmn.Value
 	userLocationInformationNR.NRCGI.NRCellIdentity.Value = aper.BitString{
 		Bytes:     []byte{0x00, 0x00, 0x00, 0x00, 0x10},
 		BitLength: 36,
 	}
 
-	userLocationInformationNR.TAI.PLMNIdentity.Value = aper.OctetString("\x02\xf8\x39")
+	userLocationInformationNR.TAI.PLMNIdentity.Value = TestPlmn.Value
 	userLocationInformationNR.TAI.TAC.Value = aper.OctetString("\x00\x00\x11")
 
 	pDUSessionResourceReleaseResponseIEs.List = append(pDUSessionResourceReleaseResponseIEs.List, ie)
@@ -1733,13 +1735,13 @@ func BuildPDUSessionResourceModifyResponse(amfUeNgapID, ranUeNgapID int64) (pdu 
 	userLocationInformation.UserLocationInformationNR = new(ngapType.UserLocationInformationNR)
 
 	userLocationInformationNR := userLocationInformation.UserLocationInformationNR
-	userLocationInformationNR.NRCGI.PLMNIdentity.Value = aper.OctetString("\x02\xf8\x39")
+	userLocationInformationNR.NRCGI.PLMNIdentity.Value = TestPlmn.Value
 	userLocationInformationNR.NRCGI.NRCellIdentity.Value = aper.BitString{
 		Bytes:     []byte{0x00, 0x00, 0x00, 0x00, 0x20},
 		BitLength: 36,
 	}
 
-	userLocationInformationNR.TAI.PLMNIdentity.Value = aper.OctetString("\x02\xf8\x39")
+	userLocationInformationNR.TAI.PLMNIdentity.Value = TestPlmn.Value
 	userLocationInformationNR.TAI.TAC.Value = aper.OctetString("\x00\x00\x11")
 
 	pDUSessionResourceModifyResponseIEs.List = append(pDUSessionResourceModifyResponseIEs.List, ie)
@@ -1835,13 +1837,13 @@ func BuildPDUSessionResourceNotify() (pdu ngapType.NGAPPDU) {
 	userLocationInformation.UserLocationInformationNR = new(ngapType.UserLocationInformationNR)
 
 	userLocationInformationNR := userLocationInformation.UserLocationInformationNR
-	userLocationInformationNR.NRCGI.PLMNIdentity.Value = aper.OctetString("\x02\xf8\x39")
+	userLocationInformationNR.NRCGI.PLMNIdentity.Value = TestPlmn.Value
 	userLocationInformationNR.NRCGI.NRCellIdentity.Value = aper.BitString{
 		Bytes:     []byte{0x00, 0x00, 0x00, 0x00, 0x10},
 		BitLength: 36,
 	}
 
-	userLocationInformationNR.TAI.PLMNIdentity.Value = aper.OctetString("\x02\xf8\x39")
+	userLocationInformationNR.TAI.PLMNIdentity.Value = TestPlmn.Value
 	userLocationInformationNR.TAI.TAC.Value = aper.OctetString("\x00\x00\x11")
 
 	pDUSessionResourceNotifyIEs.List = append(pDUSessionResourceNotifyIEs.List, ie)
@@ -2467,7 +2469,7 @@ func BuildUplinkRanConfigurationTransfer() (pdu ngapType.NGAPPDU) {
 	targetRANNodeID := &sONConfigurationTransferUL.TargetRANNodeID
 	targetRANNodeID.GlobalRANNodeID.Present = ngapType.GlobalRANNodeIDPresentGlobalGNBID
 	targetRANNodeID.GlobalRANNodeID.GlobalGNBID = new(ngapType.GlobalGNBID)
-	targetRANNodeID.GlobalRANNodeID.GlobalGNBID.PLMNIdentity.Value = aper.OctetString("\x02\xf8\x39")
+	targetRANNodeID.GlobalRANNodeID.GlobalGNBID.PLMNIdentity.Value = TestPlmn.Value
 	targetRANNodeID.GlobalRANNodeID.GlobalGNBID.GNBID.Present = ngapType.GNBIDPresentGNBID
 	targetRANNodeID.GlobalRANNodeID.GlobalGNBID.GNBID.GNBID = new(aper.BitString)
 
@@ -2476,14 +2478,14 @@ func BuildUplinkRanConfigurationTransfer() (pdu ngapType.NGAPPDU) {
 		Bytes:     []byte{0x41, 0x42, 0x40},
 		BitLength: 22,
 	}
-	targetRANNodeID.SelectedTAI.PLMNIdentity.Value = aper.OctetString("\x02\xf8\x39")
+	targetRANNodeID.SelectedTAI.PLMNIdentity.Value = TestPlmn.Value
 	targetRANNodeID.SelectedTAI.TAC.Value = aper.OctetString("\x00\x00\x01")
 
 	// Source Ran Node ID in (SON Configuration Transfer)
 	sourceRANNodeID := &sONConfigurationTransferUL.SourceRANNodeID
 	sourceRANNodeID.GlobalRANNodeID.Present = ngapType.GlobalRANNodeIDPresentGlobalGNBID
 	sourceRANNodeID.GlobalRANNodeID.GlobalGNBID = new(ngapType.GlobalGNBID)
-	sourceRANNodeID.GlobalRANNodeID.GlobalGNBID.PLMNIdentity.Value = aper.OctetString("\x02\xf8\x39")
+	sourceRANNodeID.GlobalRANNodeID.GlobalGNBID.PLMNIdentity.Value = TestPlmn.Value
 	sourceRANNodeID.GlobalRANNodeID.GlobalGNBID.GNBID.Present = ngapType.GNBIDPresentGNBID
 	sourceRANNodeID.GlobalRANNodeID.GlobalGNBID.GNBID.GNBID = new(aper.BitString)
 
@@ -2492,7 +2494,7 @@ func BuildUplinkRanConfigurationTransfer() (pdu ngapType.NGAPPDU) {
 		Bytes:     []byte{0x45, 0x46, 0x47},
 		BitLength: 24,
 	}
-	sourceRANNodeID.SelectedTAI.PLMNIdentity.Value = aper.OctetString("\x02\xf8\x39")
+	sourceRANNodeID.SelectedTAI.PLMNIdentity.Value = TestPlmn.Value
 	sourceRANNodeID.SelectedTAI.TAC.Value = aper.OctetString("\x00\x00\x01")
 
 	// SON Information in (SON Configuration Transfer)
@@ -2745,7 +2747,7 @@ func BuildLocationReport() (pdu ngapType.NGAPPDU) {
 	areaOfInterestRANNodeItem := ngapType.AreaOfInterestRANNodeItem{}
 	areaOfInterestRANNodeItem.GlobalRANNodeID.Present = ngapType.GlobalRANNodeIDPresentGlobalGNBID
 	areaOfInterestRANNodeItem.GlobalRANNodeID.GlobalGNBID = new(ngapType.GlobalGNBID)
-	areaOfInterestRANNodeItem.GlobalRANNodeID.GlobalGNBID.PLMNIdentity.Value = aper.OctetString("\x02\xf8\x39")
+	areaOfInterestRANNodeItem.GlobalRANNodeID.GlobalGNBID.PLMNIdentity.Value = TestPlmn.Value
 	areaOfInterestRANNodeItem.GlobalRANNodeID.GlobalGNBID.GNBID.Present = ngapType.GNBIDPresentGNBID
 	areaOfInterestRANNodeItem.GlobalRANNodeID.GlobalGNBID.GNBID.GNBID = new(aper.BitString)
 
@@ -3089,7 +3091,7 @@ func BuildHandoverRequired(
 	targetRANNodeID.GlobalRANNodeID.GlobalGNBID = new(ngapType.GlobalGNBID)
 
 	globalRANNodeID := targetRANNodeID.GlobalRANNodeID
-	globalRANNodeID.GlobalGNBID.PLMNIdentity.Value = aper.OctetString("\x02\xf8\x39")
+	globalRANNodeID.GlobalGNBID.PLMNIdentity.Value = TestPlmn.Value
 	globalRANNodeID.GlobalGNBID.GNBID.Present = ngapType.GNBIDPresentGNBID
 
 	globalRANNodeID.GlobalGNBID.GNBID.GNBID = new(aper.BitString)
@@ -3100,9 +3102,9 @@ func BuildHandoverRequired(
 		Bytes:     targetGNBID,
 		BitLength: uint64(len(targetGNBID) * 8),
 	}
-	globalRANNodeID.GlobalGNBID.PLMNIdentity.Value = aper.OctetString("\x02\xf8\x39")
+	globalRANNodeID.GlobalGNBID.PLMNIdentity.Value = TestPlmn.Value
 
-	targetRANNodeID.SelectedTAI.PLMNIdentity.Value = aper.OctetString("\x02\xf8\x39")
+	targetRANNodeID.SelectedTAI.PLMNIdentity.Value = TestPlmn.Value
 	targetRANNodeID.SelectedTAI.TAC.Value = aper.OctetString("\x30\x33\x99")
 
 	handoverRequiredIEs.List = append(handoverRequiredIEs.List, ie)
@@ -3201,7 +3203,7 @@ func BuildCellTrafficTrace(amfUeNgapID, ranUeNgapID int64) (pdu ngapType.NGAPPDU
 	nGRANCGI := ie.Value.NGRANCGI
 	nGRANCGI.Present = ngapType.NGRANCGIPresentNRCGI
 	nGRANCGI.NRCGI = new(ngapType.NRCGI)
-	nGRANCGI.NRCGI.PLMNIdentity.Value = aper.OctetString("\x02\xf8\x39")
+	nGRANCGI.NRCGI.PLMNIdentity.Value = TestPlmn.Value
 	nGRANCGI.NRCGI.NRCellIdentity.Value = aper.BitString{
 		Bytes:     []byte{0x00, 0x00, 0x00, 0x00, 0x10},
 		BitLength: 36,

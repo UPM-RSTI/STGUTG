@@ -37,132 +37,138 @@ for testing mode
 
 ---
 
-## Example: Deployment scenario with Free5gc-Compose v3.0.5
+## Example: Deployment scenario with Open5GS
 
 ![](esquemagit.png)
 
-This is a network scenario in which we are going to use Free5gc-Compose v3.0.5 and the STGUTG to give Internet access to a virtual machine. The scenario consists of 3 VMs as it is represented in the picture. 
+This is a network scenario in which we are going to use Open5GS and the STGUTG to give Internet access to a virtual machine. The scenario consists of 3 VMs as it is represented in the picture. 
 
-[Free5GC](https://www.free5gc.org/) is an open-source project for 5th generation (5G) mobile core networks, which intends to implement the 5G core network (5GC) defined in 3GPP Release 15 (R15) and beyond. Part of the STGUTG core derives from that project. In this example, we use the NFs implemented in Free5G to deploy a 5G core and then test the STGUTG software.
+[Open5GS](https://open5gs.org/) is an open-source project for 5th generation (5G) mobile core networks, which intends to implement the 5G core network (5GC) defined in 3GPP Release 17 (R17). In this example, we use the NFs implemented in Open5GS to deploy a 5G core and then test the STGUTG software.
 
-### 1. Install Free5gc-compose v3.0.5
-Free5gc-compose v3.0.5 is a docker-based repository for the NFs implemented by 5G. As a prerequisite, Docker and Docker-compose tools should be installed.
+### 1. Install Open5GS
 
-Once the tools are installed, clone the [Free5gc v3.0.5 repository](https://github.com/free5gc/free5gc-compose/releases/tag/v3.0.5) to start adapting the docker-compose.yaml and the NFs configuration files. 
+Open5GS is a repository for the NFs implemented by 5G. As a prerequisite, MongoDB should be installed.
+
+This is a guide for the instalation of Open5GS: [Open5GS Quickstart](https://open5gs.org/open5gs/docs/guide/01-quickstart/).
+
+Once the tools are installed, clone the [Open5GS](https://open5gs.org/) to start adapting the NFs configuration files. 
  
-### 2. Configure docker-compose.yaml
+### 2. Configure Open5GS
 
-1. The default declaration of the containers upf1, upf2 and n3iwf and all their mentions on the rest of the file should be erased.
-
-2. In the AMF section this should be added:
+1. Configure the AMF (amf.yaml) with the PLMN required. Additionally, it is important to change the IP address indicating the location of the NF, as well as adapt the sd to the one used in the connector.
 
 ```
-ports :
-  - "48412:38412/sctp"
-```
-  
-3. In the UPF section this should be added:
-```
-ports :
-  - " 2152:2152/ udp "
-  - " 2152:2152/ tcp "
-command : sh -c "chmod +x upf-iptables.sh && ./upf-iptables.sh && ./free5gc-upfd -f ..config/upfcfg.yaml"
-volumes :
-  - ./config/upfcfgb.yaml:/free5gc/config/upfcfg.yaml
-  - ./config/upf-iptables.sh:/free5gc/free5gc-upfd/upf-iptables.sh
+  sd: 010203
 ```
 
-
-4. The script with the following sentences for the iptables of upfb container should be created. It must be saved in the config/ folder of the Free5gc-compose folder.
 ```
-# !/ bin / sh
-iptables -t nat -A POSTROUTING -o eth1 -j MASQUERADE
-iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
-IPTABLES -I FORWARD 1 -j ACCEPT
+ngap:
+  - addr: 192.168.61.4
 ```
 
-5. In the NRF section UPFb is added to the "depends on:" section:
 ```
-  depends_on:
-    - db
-    - free5gc-upf-b
-```
-### 2. Configuration of SMF in Free5gc-Compose
-
-Add the UTG IP address (192.168.43.2 in the example), in the gnb1 section:
-
-```
-gNB1 : # the name of the node
-  type : AN # the type of the node ( AN or UPF )
-  an_ip : 192.168.43.2
+  mcc: 001
+  mnc: 01
 ```
 
-### 3. Add the Network interfaces to the Free5gc VM and the IPtables rules
-
-Add these IPs with ifconfig to the network interfaces created to connect the Free5gc machine with the STGUTG machine (in the example, ens5 and ens4).
-```
-sudo ifconfig ens4 192.168.43.3 netmask 255.255.255.0 up
-```
-```
-sudo ifconfig ens5 192.168.42.3 netmask 255.255.255.0 up
-```
-Execute these commands in the terminal to allow the Free5gc-Compose to reach the Internet. (in the example this uses ens6 interface. Make sure to use the propoer one depending on the specific scenario).
+2. Configure the UPF (upf.yaml), indicating the IP address of the NF and the subnet of the N6.
 
 ```
-sudo sysctl -w net . ipv4 . ip_forward =1
+gtpu:
+  - addr: 192.168.61.4
 ```
+
 ```
-sudo iptables -t nat -A POSTROUTING -o <Interface that reaches internet> -j MASQUERADE
+subnet:
+  - addr: 10.46.0.1/16
 ```
+
+3. Register the subscriber information through the WebUI.
+
 ```
-sudo systemctl stop ufw
+IMSI: 001010000000001
+Subscriber Key (K): 465B5CE8 B199B49F AA5F0A2E E238A6BC
+Operator Key (OPc): E8ED289D EBA952E4 283B54E8 8E6183CA
 ```
+
+4. Activate the IPv4 and IPv6 forwarding and add the NAT rule.
+
 ```
-sudo iptables -I FORWARD 1 -j ACCEPT
+sudo sysctl -w net.ipv4.ip_forward=1
+sudo sysctl -w net.ipv6.conf.all.forwarding=1
+sudo iptables -t nat -A POSTROUTING -s 10.46.0.0/16 ! -o ogstun -j MASQUERADE
+sudo ip6tables -t nat -A POSTROUTING -s 2001:db8:cafe::/48 ! -o ogstun -j MASQUERADE
 ```
-### 4. Configure STGUTG
+
+5. Create the TUN.
+
+```
+sudo ip tuntap add name ogstun mode tun 
+sudo ip addr add 10.46.0.1/16 dev ogstun 
+sudo ip addr add 2001:db8:cafe::1/48 dev ogstun 
+sudo ip link set ogstun up
+```
+
+### 3. Configure STGUTG
 
 1. Add the IPs of the figure to the network interfaces (previously created to interconnect both machines). In othe example the addresses are: 
+
 ```
-sudo ifconfig enp0s9 192.168.43.2 netmask 255.255.255.0 up
-```
-```
-sudo ifconfig enp0s8 192.168.42.2 netmask 255.255.255.0 up
+sudo ifconfig enp0s8 10.45.0.4 netmask 255.255.255.0 up
 ```
 ```
-sudo ifconfig enp0s10 60.60.0.3 netmask 255.255.255.0 up
+sudo ifconfig enp0s9 192.168.61.3 netmask 255.255.255.0 up
 ```
+
 2. Modify the config.yaml file to match the network configuration (the example IP addresses are already written in the config file, so in this case, IP addresses can be matched with the ones shown in the figure).
 
 ```
 # Network Functions
-  amf_ngap: 192.168.42.3
-  amf_port: 48412
+  amf_ngap: 192.168.61.4
+  amf_port: 38412
 
-  upf_gtp: 192.168.43.3
   upf_port: 2152
 
-  gnb_gtp: 192.168.43.2
-  gnbg_port: 9487
+  gnb_gtp: 192.168.61.3
+  gnbg_port: 2152
 
-  gnb_ngap: 192.168.42.2
-  gnbn_port: 2152
-
-  ue_ori: 60.60.0.1
+  gnb_ngap: 192.168.61.3
+  gnbn_port: 9487
 ```
 
-3. Configure MAC addresses and network interfaces.
+3. Adapt the UE and gNB configuration to match with the Open5GS ones.
 
-- src_iface is the interface of the STGUTG VM that faces the UE VM (enp0s10 in the example).
-- dst_iface is the interface of the STGUTG VM that faces the Free5gc VM on the user plane (enp0s9 in the example).
-- eth_src is the MAC address of the interface of the STGUTG VM that faces the UE VM (enp0s10 in the example).
+```
+# UE
+  initial_imsi: "001010000000001"
+  mcc: "001"
+  mnc: "01"
+
+# GNB data
+  gnb_id: "\x00\x01\x02"
+  gnb_bitlength: 24
+  gnb_name: "open5gs"
+
+# UE Authentication Data
+  k: "465B5CE8B199B49FAA5F0A2EE238A6BC"
+  opc: "E8ED289DEBA952E4283B54E88E6183CA"
+  op: "E8ED289DEBA952E4283B54E88E6183CA"
+
+
+  sst: 1
+  sd: "010203"
+```
+
+4. Configure MAC addresses and network interfaces.
+
+- src_iface is the interface of the STGUTG VM that faces the UE VM (enp0s8 in the example).
+- dst_iface is the interface of the STGUTG VM that faces the Open5GS VM on the user plane (enp0s9 in the example).
 - ue_number is the number of UEs to be emulated (it depends on the number of VMs deployed as UEs).
 
 ```
- # Interaces and MACs for traffic
-  src_iface: "enp0s10"
+  # Interaces for traffic
+  src_iface: "enp0s8"
   dst_iface: "enp0s9"
-  eth_src: "fa163e2d99eb"
 
   # Number of UEs to use in traffic mode
   ue_number: 1
@@ -174,64 +180,43 @@ Create an interface to reach the STGUTG VM and make a default route to make all 
 
 
 ```
-sudo ifconfig enp0s9 192.168.43.2 netmask 255.255.255.0 mtu 1400 up
+sudo ifconfig enp0s3 10.45.0.3 netmask 255.255.255.0 mtu 1400 up
 ```
 ```
-sudo ip route add default via 60.60.0.3
+sudo ip route add default via 10.45.0.4
 ```
 
 ### 5. Run the scenario
 
-1. In Free5gc VM, execute in the Free5gc-compose folder the following commands. This will start the NFs of the 5G core:
+1. In Open5GS VM, execute in the Open5GS folder the following commands. This will start the NFs of the 5G core:
 
 ```
-sudo docker-compose build
-```
-```
-sudo docker-compose start free5gc-upf-b
-```
-```
-sudo docker-compose up
+sudo systemctl restart open5gs-mmed
+sudo systemctl restart open5gs-sgwcd
+sudo systemctl restart open5gs-smfd
+sudo systemctl restart open5gs-amfd
+sudo systemctl restart open5gs-sgwud
+sudo systemctl restart open5gs-upfd
+sudo systemctl restart open5gs-hssd
+sudo systemctl restart open5gs-pcrfd
+sudo systemctl restart open5gs-nrfd
+sudo systemctl restart open5gs-scpd
+sudo systemctl restart open5gs-seppd
+sudo systemctl restart open5gs-ausfd
+sudo systemctl restart open5gs-udmd
+sudo systemctl restart open5gs-pcfd
+sudo systemctl restart open5gs-nssfd
+sudo systemctl restart open5gs-bsfd
+sudo systemctl restart open5gs-udrd
+sudo systemctl restart open5gs-webui
 ```
 
-2. subscribe the UE in the core:
-
-In a web browser, access the VM of the Free5gc in the web dashboard (http://<ip of free5gc VM>:5000). 
-	- user: admin
-	- pass: free5gc.
-
-Add a new subscriber without modifying any parameter.
-
-3.  run the STGUTG software:
+2.  run the STGUTG software:
 ```
 sudo ./stgutgmain
 ```
 
-4. Use the UE VM to send traffic through the core to any Internet-based service (ping to 8.8.8.8 should suffice to test if the configuration is successful).
-
----
-
-## Installation with Docker
-
-An alternative way for the installation of the STGUTG software using docker is provided here. Docker configuration files might be outdated.
-
-1. Download all github stgutg repository.
-2. Extract dockerfile and docker-compose files from folder stgutg. This is because Dockerfile needs copy stgutg folder to docker container.
-
-Default path tree (e.g /home/stgutg)
-  - src
-  - utils
-  - Dockerfile
-  - README.md
-  - config.yaml
-  - docker-compose.yml
-  - init.sh
-  - stg-utg
-
-Path tree for docker (e.g /home)
-  - stgutg
-  - Dockerfile
-  - docker-compose.yml
+3. Use the UE VM to send traffic through the core to any Internet-based service (ping to 8.8.8.8 should suffice to test if the configuration is successful).
 
 ---
 

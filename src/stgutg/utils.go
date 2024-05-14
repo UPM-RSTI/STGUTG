@@ -27,7 +27,8 @@ type Conf struct {
 		Gnb_id                    string `yaml:"gnb_id"`
 		Gnb_bitlength             uint64 `yaml:"gnb_bitlength"`
 		Gnb_name                  string `yaml:"gnb_name"`
-		Initial_imsi              int    `yaml:"initial_imsi"`
+		Initial_imsi              string `yaml:"initial_imsi"`
+		Mcc                       string `yaml:"mcc"`
 		Mnc                       string `yaml:"mnc"`
 		K                         string `yaml:"k"`
 		OPC                       string `yaml:"opc"`
