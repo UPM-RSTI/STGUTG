@@ -8,25 +8,21 @@ package stgutg
 import (
 	"free5gclib/nas/nasMessage"
 	"free5gclib/nas/nasType"
-	"syscall"
 
 	"gopkg.in/yaml.v2"
 
-	"bufio"
 	"fmt"
-	"io/ioutil"
 	"os"
-	"strings"
 )
 
 type Conf struct {
 	Configuration struct {
-		Amf_ngap                  string `yaml:"amf_ngap"`
-		Amf_port                  int    `yaml:"amf_port"`
+		AmfNgapIP                 string `yaml:"amf_ngap_ip"`
+		AmfNgapPort               int    `yaml:"amf_ngap_port"`
 		Gnb_gtp                   string `yaml:"gnb_gtp"`
 		Gnbg_port                 int    `yaml:"gnbg_port"`
-		Gnb_ngap                  string `yaml:"gnb_ngap"`
-		Gnbn_port                 int    `yaml:"gnbn_port"`
+		StgNgapIP                 string `yaml:"stg_ngap_ip"`
+		StgNgapPort               int    `yaml:"stg_ngap_port"`
 		Upf_port                  int    `yaml:"upf_port"`
 		Gnb_id                    string `yaml:"gnb_id"`
 		Gnb_bitlength             uint64 `yaml:"gnb_bitlength"`
@@ -38,7 +34,8 @@ type Conf struct {
 		OP                        string `yaml:"op"`
 		SST                       int32  `yaml:"sst"`
 		SD                        string `yaml:"sd"`
-		SrcIface                  string `yaml:"src_iface"`
+		DLIface                   string `yaml:"downlink_iface"`
+		ULIface                   string `yaml:"uplink_iface"`
 		UeNumber                  int    `yaml:"ue_number"`
 		Test_ue_registation       int    `yaml:"ue_registration"`
 		Test_ue_pdu_establishment int    `yaml:"ue_pdu"`
@@ -48,16 +45,9 @@ type Conf struct {
 	}
 }
 
-// TeidUpfIp
-// Structure to store tuples of IP addresses and TEIDs.
-type TeidUpfIp struct {
-	teid    uint32
-	upfAddr *syscall.SockaddrInet4
-}
-
 func (c *Conf) GetConfiguration() Conf {
 
-	yamlFile, _ := ioutil.ReadFile("config.yaml")
+	yamlFile, _ := os.ReadFile("config.yaml")
 	yaml.Unmarshal(yamlFile, c)
 
 	return *c
@@ -134,57 +124,9 @@ func EncodeSuci(imsi []byte, mncLen int) *nasType.MobileIdentity5GS {
 // Generic function that prints an error and exits the program.
 func ManageError(message string, err error) {
 	if err != nil {
-		fmt.Println(message, ":", err)
+		fmt.Println(message+":", err)
 		os.Exit(1)
 	}
-}
-
-// GetARPTable
-// Function that reads a file containing the system's ARP table and returns
-// a variable with its contents.
-func GetARPTable(arptfile string) [][]string {
-
-	var arptable [][]string
-
-	arpfile, _ := os.Open(arptfile)
-
-	arpscanner := bufio.NewScanner(arpfile)
-	arpscanner.Split(bufio.ScanLines)
-
-	arpscanner.Scan()
-
-	for arpscanner.Scan() {
-
-		arpline := strings.Fields(arpscanner.Text())
-		arptable = append(arptable, arpline)
-	}
-
-	return arptable
-}
-
-// GetMAC
-// Function that reads a variable containing an ARP table and looks up for
-// the MAC corresponding to a given IP address.
-func GetMAC(ip string, table [][]string) string {
-	mac := "0"
-	for _, line := range table {
-		if ip == line[0] {
-			mac = strings.ReplaceAll(line[3], ":", "")
-		}
-	}
-	return mac
-}
-
-// GetIP
-// Function that extracts an IP address from a buffer of bytes. Used to
-// get the IP address of the encapsulated packet received from the GTP tunnel.
-func GetIP(ip_buffer []byte) string {
-
-	ip := fmt.Sprintf("%d", ip_buffer[16])
-	for i := 17; i < 20; i++ {
-		ip = ip + "." + fmt.Sprintf("%d", ip_buffer[i])
-	}
-	return ip
 }
 
 func Min(x, y int) int {

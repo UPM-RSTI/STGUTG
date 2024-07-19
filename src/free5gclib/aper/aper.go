@@ -58,26 +58,6 @@ func GetBitString(srcBytes []byte, bitsOffset uint, numBits uint) (dstBytes []by
 	return
 }
 
-// GetFewBits is to get Value with desire few bits from source byte with bit offset
-// func GetFewBits(srcByte byte, bitsOffset uint, numBits uint) (value uint64, err error) {
-
-// 	if numBits == 0 {
-// 		value = 0
-// 		return
-// 	}
-// 	bitsLeft := 8 - bitsOffset
-// 	if bitsLeft < numBits {
-// 		err = fmt.Errorf("Get bits overflow, requireBits: %d, leftBits: %d", numBits, bitsLeft)
-// 		return
-// 	}
-// 	if bitsOffset == 0 {
-// 		value = uint64(srcByte >> (8 - numBits))
-// 	} else {
-// 		value = uint64((srcByte << bitsOffset) >> (8 - numBits))
-// 	}
-// 	return
-// }
-
 // GetBitsValue is to get Value with desire bits from source byte array with bit offset
 func GetBitsValue(srcBytes []byte, bitsOffset uint, numBits uint) (value uint64, err error) {
 	var dstBytes []byte
