@@ -1,9 +1,9 @@
 
-![](stgutg.png) 
+![](5gtc.png) 
 
-# STGUTG
+# 5G Traffic Connector
 
-STGUTG (Signaling Traffic Generation/User Traffic Generation) is a software created for the generation of both signal and user traffic to be sent to a 5G network core. It is based on implementations from the [Free5GC](https://www.free5gc.org/) project and is distributed under an Apache 2.0 license.
+5G Traffic Connector is a software created for the generation of both signal and user traffic to be sent to a 5G network core. It is based on implementations from the [Free5GC](https://www.free5gc.org/) project and is distributed under an Apache 2.0 license.
 
 Developed by [UPM RSTI Research group](https://blogs.upm.es/rsti).
 
