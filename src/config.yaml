@@ -5,7 +5,7 @@ info:
 configuration:
 
 # Network Functions
-  amf_ngap_ip: 192.168.60.11
+  amf_ngap_ip: 192.168.61.4
   amf_ngap_port: 38412 #48412
 
   upf_port: 2152
@@ -13,7 +13,7 @@ configuration:
   gnb_gtp: 192.168.61.3
   gnbg_port: 2152
 
-  stg_ngap_ip: 192.168.60.10
+  stg_ngap_ip: 192.168.61.3
   stg_ngap_port: 9487
 
 # UE
@@ -36,8 +36,8 @@ configuration:
   sd: "010203"
   
   # Interaces for traffic
-  downlink_iface: "enp0s10"
-  uplink_iface: "enp0s3"
+  downlink_iface: "enp0s8"
+  uplink_iface: "enp0s9"
 
   # Number of UEs to use in traffic mode
   ue_number: 1
