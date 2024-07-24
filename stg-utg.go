@@ -100,17 +100,15 @@ func main() {
 			time.Sleep(1 * time.Second)
 		}
 
-		for i, pdu := range pduList {
+		for i := range pduList {
 			fmt.Println(">> Establishing PDU session for", ueList[i].Supi)
 
 			clientip, teid, upfip := stgutg.EstablishPDU(
 				c.Configuration.SST,
 				c.Configuration.SD,
-				pdu,
 				ueList[i],
 				conn,
 				c.Configuration.Gnb_gtp,
-				c.Configuration.Upf_port,
 			)
 
 			if !xgtp.UpfIsRegistered(upfip) {
@@ -232,11 +230,9 @@ func main() {
 			stgutg.EstablishPDU(
 				c.Configuration.SST,
 				c.Configuration.SD,
-				pduList[i],
 				ueList[i],
 				conn,
 				c.Configuration.Gnb_gtp,
-				c.Configuration.Upf_port,
 			)
 
 			time.Sleep(1 * time.Second)

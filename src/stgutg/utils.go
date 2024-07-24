@@ -19,11 +19,9 @@ type Conf struct {
 	Configuration struct {
 		AmfNgapIP                 string `yaml:"amf_ngap_ip"`
 		AmfNgapPort               int    `yaml:"amf_ngap_port"`
-		Gnb_gtp                   string `yaml:"gnb_gtp"`
-		Gnbg_port                 int    `yaml:"gnbg_port"`
+		Gnb_gtp                   string `yaml:"gnb_gtp_ip"`
 		StgNgapIP                 string `yaml:"stg_ngap_ip"`
 		StgNgapPort               int    `yaml:"stg_ngap_port"`
-		Upf_port                  int    `yaml:"upf_port"`
 		Gnb_id                    string `yaml:"gnb_id"`
 		Gnb_bitlength             uint64 `yaml:"gnb_bitlength"`
 		Gnb_name                  string `yaml:"gnb_name"`

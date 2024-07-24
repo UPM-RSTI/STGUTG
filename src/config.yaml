@@ -8,10 +8,7 @@ configuration:
   amf_ngap_ip: 192.168.61.4
   amf_ngap_port: 38412 #48412
 
-  upf_port: 2152
-
-  gnb_gtp: 192.168.61.3
-  gnbg_port: 2152
+  gnb_gtp_ip: 192.168.61.3
 
   stg_ngap_ip: 192.168.61.3
   stg_ngap_port: 9487

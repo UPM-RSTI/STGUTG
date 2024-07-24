@@ -118,16 +118,13 @@ sudo ifconfig enp0s9 192.168.61.3 netmask 255.255.255.0 up
 
 ```
 # Network Functions
-  amf_ngap: 192.168.61.4
-  amf_port: 38412
+  amf_ngap_ip: 192.168.61.4
+  amf_ngap_port: 38412 #48412
 
-  upf_port: 2152
+  gnb_gtp_ip: 192.168.61.3
 
-  gnb_gtp: 192.168.61.3
-  gnbg_port: 2152
-
-  gnb_ngap: 192.168.61.3
-  gnbn_port: 9487
+  stg_ngap_ip: 192.168.61.3
+  stg_ngap_port: 9487
 ```
 
 3. Adapt the UE and gNB configuration to match with the Open5GS ones.
