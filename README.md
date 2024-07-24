@@ -9,19 +9,13 @@ Developed by [UPM RSTI Research group](https://blogs.upm.es/rsti).
 
 ## Installation 
 
-### 1. Install dependencies
-
-```
-sudo apt-get install libpcap-dev
-```
-
-### 2. Build executable
+### 1. Build executable
 
 ```
 go build
 ```
 
-### 3. Configure and run
+### 2. Configure and run
 
 ```
 nano src/config.yaml
