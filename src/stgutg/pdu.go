@@ -7,13 +7,12 @@ package stgutg
 // Date: 9/6/21
 
 import (
+	"free5gclib/nas"
+	"free5gclib/nas/nasMessage"
+	"free5gclib/nas/nasTestpacket"
+	"free5gclib/ngap"
+	"free5gclib/openapi/models"
 	"net"
-
-	"github.com/free5gc/nas"
-	"github.com/free5gc/nas/nasMessage"
-	"github.com/free5gc/nas/nasTestpacket"
-	"github.com/free5gc/ngap"
-	"github.com/free5gc/openapi/models"
 
 	"encoding/binary"
 	"fmt"
@@ -58,7 +57,7 @@ var PDUSessionEstablishmentAcceptOptionalElementsHalfByte = []byte{
 // Function that establishes a new PDU session for a given UE.
 // It requres a previously generated UE and an active SCTP connection with an AMF.
 // It returns a tuple of assigned IP for the UE and the corresponding TEID.
-func EstablishPDU(sst int32, sd string, pdu []byte, ue *tglib.RanUeContext, conn *sctp.SCTPConn, gnb_gtp string, upf_port int) (net.IP, uint32, net.IP) {
+func EstablishPDU(sst int32, sd string, ue *tglib.RanUeContext, conn *sctp.SCTPConn, gnb_gtp string) (net.IP, uint32, net.IP) {
 
 	var recvMsg = make([]byte, 2048)
 	sNssai := models.Snssai{
@@ -70,7 +69,7 @@ func EstablishPDU(sst int32, sd string, pdu []byte, ue *tglib.RanUeContext, conn
 	supiInt, _ := strconv.Atoi(ueSupi)
 	pduId := int64(supiInt % 1e4) //TODO: Check if it works with large SUPI numbers
 
-	pdu = nasTestpacket.GetUlNasTransport_PduSessionEstablishmentRequest(uint8(pduId),
+	pdu := nasTestpacket.GetUlNasTransport_PduSessionEstablishmentRequest(uint8(pduId),
 		nasMessage.ULNASTransportRequestTypeInitialRequest,
 		"internet",
 		&sNssai)

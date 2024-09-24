@@ -734,7 +734,8 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 					}
 				}
 				if present == 0 {
-					return fmt.Errorf("OpenType reference value does not match any field")
+					return nil
+					//return fmt.Errorf("OpenType reference value does not match any field")
 				} else if present >= structType.NumField() {
 					return fmt.Errorf("OpenType Present is bigger than number of struct field")
 				} else {

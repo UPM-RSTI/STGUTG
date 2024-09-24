@@ -69,17 +69,21 @@ func main() {
 			c.Configuration.StgNgapPort)
 		stgutg.ManageError("Error in connection to AMF", err)
 
+		imsi := c.Configuration.Initial_imsi
+
 		fmt.Println(">> Managing NG Setup")
 		stgutg.ManageNGSetup(conn,
 			c.Configuration.Gnb_id,
+			imsi,
+			c.Configuration.Mnc,
 			c.Configuration.Gnb_bitlength,
 			c.Configuration.Gnb_name)
 
 		for i := 0; i < c.Configuration.UeNumber; i++ {
-			imsi := c.Configuration.Initial_imsi + i
 
 			fmt.Println(">> Creating new UE with IMSI:", imsi)
 			ue := stgutg.CreateUE(imsi,
+				i,
 				c.Configuration.K,
 				c.Configuration.OPC,
 				c.Configuration.OP)
@@ -87,6 +91,7 @@ func main() {
 			fmt.Println(">> Registering UE with IMSI:", imsi)
 			ue, pdu, _ := stgutg.RegisterUE(ue,
 				c.Configuration.Mnc,
+				c.Configuration.Mcc,
 				conn)
 
 			ueList = append(ueList, ue)
@@ -95,17 +100,15 @@ func main() {
 			time.Sleep(1 * time.Second)
 		}
 
-		for i, pdu := range pduList {
+		for i := range pduList {
 			fmt.Println(">> Establishing PDU session for", ueList[i].Supi)
 
 			clientip, teid, upfip := stgutg.EstablishPDU(
 				c.Configuration.SST,
 				c.Configuration.SD,
-				pdu,
 				ueList[i],
 				conn,
 				c.Configuration.Gnb_gtp,
-				c.Configuration.Upf_port,
 			)
 
 			if !xgtp.UpfIsRegistered(upfip) {
@@ -188,19 +191,22 @@ func main() {
 			c.Configuration.StgNgapPort)
 		stgutg.ManageError("Error in connection to AMF", err)
 
+		imsi := c.Configuration.Initial_imsi
+
 		fmt.Println(">> Managing NG Setup")
 		stgutg.ManageNGSetup(conn,
 			c.Configuration.Gnb_id,
+			imsi,
+			c.Configuration.Mnc,
 			c.Configuration.Gnb_bitlength,
 			c.Configuration.Gnb_name)
 
 		for i := 0; i < c.Configuration.Test_ue_registation; i++ {
 			fmt.Println(">> [ UE REGISTRATION TEST", i+1, "]")
 
-			imsi := c.Configuration.Initial_imsi + i
-
 			fmt.Println(">> Creating new UE with IMSI:", imsi)
 			ue := stgutg.CreateUE(imsi,
+				i,
 				c.Configuration.K,
 				c.Configuration.OPC,
 				c.Configuration.OP)
@@ -208,6 +214,7 @@ func main() {
 			fmt.Println(">> Registering UE with IMSI:", imsi)
 			ue, pdu, _ := stgutg.RegisterUE(ue,
 				c.Configuration.Mnc,
+				c.Configuration.Mcc,
 				conn)
 
 			ueList = append(ueList, ue)
@@ -223,11 +230,9 @@ func main() {
 			stgutg.EstablishPDU(
 				c.Configuration.SST,
 				c.Configuration.SD,
-				pduList[i],
 				ueList[i],
 				conn,
 				c.Configuration.Gnb_gtp,
-				c.Configuration.Upf_port,
 			)
 
 			time.Sleep(1 * time.Second)

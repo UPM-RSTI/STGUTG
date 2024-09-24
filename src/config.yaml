@@ -5,38 +5,36 @@ info:
 configuration:
 
 # Network Functions
-  amf_ngap_ip: 192.168.60.11
+  amf_ngap_ip: 192.168.61.4
   amf_ngap_port: 38412 #48412
 
-  upf_port: 2152
+  gnb_gtp_ip: 192.168.61.3
 
-  gnb_gtp: 192.168.60.10
-  gnbg_port: 2152
-
-  stg_ngap_ip: 192.168.60.10
+  stg_ngap_ip: 192.168.61.3
   stg_ngap_port: 9487
 
 # UE
-  initial_imsi: 208930000000003
-  mcc: "208"
-  mnc: "93"
+  initial_imsi: "001010000000001"
+  mcc: "001"
+  mnc: "01"
 
 # GNB data
   gnb_id: "\x00\x01\x02"
   gnb_bitlength: 24
-  gnb_name: "free5gc"
+  gnb_name: "open5gs"
 
 # UE Authentication Data
-  k: "8baf473f2f8fd09487cccbd7097c6862"
-  opc: "8e27b6af0e692e750f32667a3b14605d"
-  op: "c9e8763286b5b9ffbdf56e1297d0887b"
+  k: "465B5CE8B199B49FAA5F0A2EE238A6BC"
+  opc: "E8ED289DEBA952E4283B54E88E6183CA"
+  op: "E8ED289DEBA952E4283B54E88E6183CA"
+
 
   sst: 1
   sd: "010203"
-
+  
   # Interaces for traffic
-  downlink_iface: "enp0s10"
-  uplink_iface: "enp0s3"
+  downlink_iface: "enp0s8"
+  uplink_iface: "enp0s9"
 
   # Number of UEs to use in traffic mode
   ue_number: 1
