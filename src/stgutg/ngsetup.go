@@ -7,6 +7,7 @@ package stgutg
 
 import (
 	"free5gclib/ngap"
+	"strings"
 
 	"tglib"
 
@@ -16,10 +17,12 @@ import (
 // ManageNGSetup
 // Generates and sends the initial setup request to the configured AMF.
 // Receives the response from the AMF and decodes it.
-func ManageNGSetup(conn *sctp.SCTPConn, gnbId string, bitlength uint64, name string) {
+func ManageNGSetup(conn *sctp.SCTPConn, gnbId string, imsi string, mnc string, bitlength uint64, name string) {
 	var recvMsg = make([]byte, 2048)
 
-	sendMsg, err := tglib.GetNGSetupRequest([]byte(gnbId), bitlength, name)
+	mobilePLMN := EncodeSuci([]byte(strings.TrimPrefix(imsi, "imsi-")), len(mnc)).Buffer[1:4]
+
+	sendMsg, err := tglib.GetNGSetupRequest([]byte(gnbId), mobilePLMN, bitlength, name)
 	ManageError("Error in NG Setup", err)
 
 	_, err = conn.Write(sendMsg)

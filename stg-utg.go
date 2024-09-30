@@ -1,28 +1,28 @@
 package main
 
-// #cgo CFLAGS: -pthread
-// #include <signal.h>
-// #include <pthread.h>
-import "C"
-
 import (
-	"context"
 	"fmt"
+	"net"
 	"os"
-	"os/signal"
-	"sync"
-	"syscall"
 	"time"
 
 	"stgutg"
 	"tglib"
+
+	"github.com/Rotchamar/xdp_gtp/xdpgtp"
+	"github.com/cilium/ebpf/link"
 )
+
+type clientInfo struct {
+	clientIP net.IP
+	teid     uint32
+	upfIP    net.IP
+}
 
 func main() {
 
 	var ueList []*tglib.RanUeContext
 	var pduList [][]byte
-	teidUpfIPs := make(map[[4]byte]stgutg.TeidUpfIp)
 
 	var c stgutg.Conf
 	c.GetConfiguration()
@@ -33,24 +33,57 @@ func main() {
 		fmt.Println("TRAFFIC MODE")
 		fmt.Println("----------------------")
 
+		fmt.Println(">> Setting up data plane interfaces")
+		clientIface, err := net.InterfaceByName(c.Configuration.DLIface)
+		if err != nil {
+			stgutg.ManageError("Error obtaining client-facing address information", err)
+		}
+
+		upfIface, err := net.InterfaceByName(c.Configuration.ULIface)
+		if err != nil {
+			stgutg.ManageError("Error obtaining UPF-facing address information", err)
+		}
+
+		xgtp, err := xdpgtp.NewXDPGTP(link.XDPGenericMode)
+		if err != nil {
+			stgutg.ManageError("Error creating XDPGTP object", err)
+		}
+		defer xgtp.Close()
+
+		err = xgtp.AttachClientFacingProgramToInterface(clientIface.Index)
+		if err != nil {
+			stgutg.ManageError("Error attaching client-facing program", err)
+		}
+		defer xgtp.DetachProgramFromInterface(clientIface.Index)
+
+		err = xgtp.AttachUpfFacingProgramToInterface(upfIface.Index)
+		if err != nil {
+			stgutg.ManageError("Error attaching UPF-facing program", err)
+		}
+		defer xgtp.DetachProgramFromInterface(upfIface.Index)
+
 		fmt.Println(">> Connecting to AMF")
-		conn, err := tglib.ConnectToAmf(c.Configuration.Amf_ngap,
-			c.Configuration.Gnb_ngap,
-			c.Configuration.Amf_port,
-			c.Configuration.Gnbn_port)
+		conn, err := tglib.ConnectToAmf(c.Configuration.AmfNgapIP,
+			c.Configuration.StgNgapIP,
+			c.Configuration.AmfNgapPort,
+			c.Configuration.StgNgapPort)
 		stgutg.ManageError("Error in connection to AMF", err)
+
+		imsi := c.Configuration.Initial_imsi
 
 		fmt.Println(">> Managing NG Setup")
 		stgutg.ManageNGSetup(conn,
 			c.Configuration.Gnb_id,
+			imsi,
+			c.Configuration.Mnc,
 			c.Configuration.Gnb_bitlength,
 			c.Configuration.Gnb_name)
 
 		for i := 0; i < c.Configuration.UeNumber; i++ {
-			imsi := c.Configuration.Initial_imsi + i
 
 			fmt.Println(">> Creating new UE with IMSI:", imsi)
 			ue := stgutg.CreateUE(imsi,
+				i,
 				c.Configuration.K,
 				c.Configuration.OPC,
 				c.Configuration.OP)
@@ -58,6 +91,7 @@ func main() {
 			fmt.Println(">> Registering UE with IMSI:", imsi)
 			ue, pdu, _ := stgutg.RegisterUE(ue,
 				c.Configuration.Mnc,
+				c.Configuration.Mcc,
 				conn)
 
 			ueList = append(ueList, ue)
@@ -66,64 +100,43 @@ func main() {
 			time.Sleep(1 * time.Second)
 		}
 
-		i := 0
-		for _, pdu := range pduList {
+		for i := range pduList {
 			fmt.Println(">> Establishing PDU session for", ueList[i].Supi)
 
-			// PDU info stored in teidUpfIPs
-			stgutg.EstablishPDU(c.Configuration.SST,
+			clientip, teid, upfip := stgutg.EstablishPDU(
+				c.Configuration.SST,
 				c.Configuration.SD,
-				pdu,
 				ueList[i],
 				conn,
 				c.Configuration.Gnb_gtp,
-				c.Configuration.Upf_port,
-				teidUpfIPs)
+			)
 
-			i++
+			if !xgtp.UpfIsRegistered(upfip) {
+				xgtp.AddUpf(upfip)
+			}
+
+			if !xgtp.ClientIsRegistered(clientip) {
+				xgtp.AddClient(clientip, teid, upfip)
+			}
+
 			time.Sleep(1 * time.Second)
 		}
 
-		fmt.Println(teidUpfIPs)
+		clientsIPs, teids, upfsIPs := xgtp.GetClients()
 
-		fmt.Println(">> Connecting to UPF")
-		upfFD, err := tglib.ConnectToUpf(c.Configuration.Gnbg_port)
-		stgutg.ManageError("Error in connection to UPF", err)
+		registeredClients := make([]clientInfo, len(clientsIPs))
 
-		fmt.Println(">> Opening traffic interfaces")
-		ethSocketConn, err := tglib.NewEthSocketConn(c.Configuration.SrcIface)
-		stgutg.ManageError("Error creating Ethernet socket", err)
+		for idx := range clientsIPs {
+			registeredClients[idx] = clientInfo{clientsIPs[idx], teids[idx], upfsIPs[idx]}
+		}
 
-		ipSocketConn, err := tglib.NewIPSocketConn()
-		stgutg.ManageError("Error creating IP socket", err)
+		fmt.Println(registeredClients)
 
 		var stopProgram = make(chan os.Signal)
-		signal.Notify(stopProgram, syscall.SIGTERM)
-		signal.Notify(stopProgram, syscall.SIGINT)
-
-		ctx, cancelFunc := context.WithCancel(context.Background())
-		wg := &sync.WaitGroup{}
-		utg_ul_thread_chan := make(chan stgutg.Thread)
-
-		wg.Add(2)
-
-		fmt.Println(">> Listening to traffic responses")
-		go stgutg.ListenForResponses(ipSocketConn, upfFD, ctx, wg)
-
-		fmt.Println(">> Waiting for traffic to send (Press Ctrl+C to quit)")
-		go stgutg.SendTraffic(upfFD, ethSocketConn, teidUpfIPs, ctx, wg, utg_ul_thread_chan)
-
-		utg_ul_thread := <-utg_ul_thread_chan
 
 		// Program interrupted
 		sig := <-stopProgram
 		fmt.Println("\n>> Exiting program:", sig, "found")
-
-		cancelFunc() // Call for UTG to shut down
-
-		// Stop packet capture for both interfaces of UTG
-		C.pthread_kill(C.ulong(utg_ul_thread.Id), C.SIGUSR1)
-		syscall.Shutdown(upfFD, syscall.SHUT_RD)
 
 		for _, ue := range ueList {
 			fmt.Println(">> Releasing PDU session for", ue.Supi)
@@ -145,15 +158,6 @@ func main() {
 		time.Sleep(1 * time.Second)
 		conn.Close()
 
-		fmt.Println(">> Waiting for UTG to shut down")
-		wg.Wait() // Wait for UTG to shut down, then close interfaces
-
-		fmt.Println(">> Closing network interfaces")
-		syscall.Close(upfFD)
-		syscall.Close(ethSocketConn.Fd)
-		syscall.Close(ipSocketConn.Fd)
-
-		time.Sleep(1 * time.Second)
 		os.Exit(0)
 
 	} else if mode == 2 {
@@ -181,25 +185,28 @@ func main() {
 		fmt.Println("----------------------")
 
 		fmt.Println(">> Connecting to AMF")
-		conn, err := tglib.ConnectToAmf(c.Configuration.Amf_ngap,
-			c.Configuration.Gnb_ngap,
-			c.Configuration.Amf_port,
-			c.Configuration.Gnbn_port)
+		conn, err := tglib.ConnectToAmf(c.Configuration.AmfNgapIP,
+			c.Configuration.StgNgapIP,
+			c.Configuration.AmfNgapPort,
+			c.Configuration.StgNgapPort)
 		stgutg.ManageError("Error in connection to AMF", err)
+
+		imsi := c.Configuration.Initial_imsi
 
 		fmt.Println(">> Managing NG Setup")
 		stgutg.ManageNGSetup(conn,
 			c.Configuration.Gnb_id,
+			imsi,
+			c.Configuration.Mnc,
 			c.Configuration.Gnb_bitlength,
 			c.Configuration.Gnb_name)
 
 		for i := 0; i < c.Configuration.Test_ue_registation; i++ {
 			fmt.Println(">> [ UE REGISTRATION TEST", i+1, "]")
 
-			imsi := c.Configuration.Initial_imsi + i
-
 			fmt.Println(">> Creating new UE with IMSI:", imsi)
 			ue := stgutg.CreateUE(imsi,
+				i,
 				c.Configuration.K,
 				c.Configuration.OPC,
 				c.Configuration.OP)
@@ -207,6 +214,7 @@ func main() {
 			fmt.Println(">> Registering UE with IMSI:", imsi)
 			ue, pdu, _ := stgutg.RegisterUE(ue,
 				c.Configuration.Mnc,
+				c.Configuration.Mcc,
 				conn)
 
 			ueList = append(ueList, ue)
@@ -219,14 +227,13 @@ func main() {
 			fmt.Println(">> [ PDU ESTABLISHMENT TEST", i+1, "]")
 
 			fmt.Println(">> Establishing PDU session for", ueList[i].Supi)
-			stgutg.EstablishPDU(c.Configuration.SST,
+			stgutg.EstablishPDU(
+				c.Configuration.SST,
 				c.Configuration.SD,
-				pduList[i],
 				ueList[i],
 				conn,
 				c.Configuration.Gnb_gtp,
-				c.Configuration.Upf_port,
-				teidUpfIPs)
+			)
 
 			time.Sleep(1 * time.Second)
 		}

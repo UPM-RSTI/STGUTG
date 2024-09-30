@@ -41,13 +41,3 @@ func init() {
 	ConvertLog = log.WithFields(logrus.Fields{"component": "NAS", "category": "Convert"})
 	SecurityLog = log.WithFields(logrus.Fields{"component": "NAS", "category": "Security"})
 }
-
-func SetLogLevel(level logrus.Level) {
-	NasMsgLog.Infoln("set log level :", level)
-	log.SetLevel(level)
-}
-
-func SetReportCaller(bool bool) {
-	NasMsgLog.Infoln("set report call :", bool)
-	log.SetReportCaller(bool)
-}

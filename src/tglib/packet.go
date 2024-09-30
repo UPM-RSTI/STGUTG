@@ -10,8 +10,8 @@ import (
 	// "free5gclib/openapi/models"
 )
 
-func GetNGSetupRequest(gnbId []byte, bitlength uint64, name string) ([]byte, error) {
-	message := ngapTestpacket.BuildNGSetupRequest()
+func GetNGSetupRequest(gnbId []byte, mobilePLMN []uint8, bitlength uint64, name string) ([]byte, error) {
+	message := ngapTestpacket.BuildNGSetupRequest(mobilePLMN)
 	// GlobalRANNodeID
 	ie := message.InitiatingMessage.Value.NGSetupRequest.ProtocolIEs.List[0]
 	gnbID := ie.Value.GlobalRANNodeID.GlobalGNBID.GNBID.GNBID
